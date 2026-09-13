@@ -1,23 +1,7 @@
 {
-  "updatedAt": "2026-09-14T03:30:00.000Z",
-  "keys": [
-    {
-      "username": "tester1",
-      "licenseKey": "KEY-DEMO-1234-5678",
-      "durationDays": 30,
-      "createdAt": "2026-09-14T03:30:00.000Z",
-      "expiresAt": "2026-10-14T03:30:00.000Z",
-      "status": "active",
-      "notes": "Demo License"
-    },
-    {
-      "username": "vip_user",
-      "licenseKey": "VIP-9999-AAAA-BBBB",
-      "durationDays": -1,
-      "createdAt": "2026-09-14T03:30:00.000Z",
-      "expiresAt": null,
-      "status": "active",
-      "notes": "Lifetime VIP License"
-    }
-  ]
+  "keys": [],
+  "admin": {
+    "username": "admin",
+    "password": "admin123"
+  }
 }

@@ -2,188 +2,141 @@
 
 #include <iostream>
 #include <string>
-#include <vector>
 #include <windows.h>
 #include <wininet.h>
 #include <sstream>
 
 #pragma comment(lib, "wininet.lib")
 
-namespace KeyAuthGitHub {
+namespace KeyAuthLib {
 
-    struct LicenseInfo {
-        bool isValid = false;
-        std::string username = "";
-        std::string licenseKey = "";
+    struct AuthResponse {
+        bool success = false;
         std::string status = "";
-        std::string notes = "";
-        std::string expiresAt = "";
         std::string message = "";
+        std::string licenseKey = "";
+        std::string duration = "";
+        std::string remaining = "";
+        std::string expiresAt = "";
     };
 
-    class Client {
+    class KeyAuth {
     private:
-        std::string rawJsonUrl;
+        std::string serverHost;
+        int serverPort;
+        bool isHttps;
 
-        // Fetch URL content over HTTPS using Windows WinINet
-        std::string DownloadString(const std::string& url) {
-            HINTERNET hInternet = InternetOpenA("KeyAuthGitHubClient/1.0", INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
-            if (!hInternet) return "";
+        std::string ExtractJsonValue(const std::string& json, const std::string& key) {
+            std::string searchKey = "\"" + key + "\":\"";
+            size_t start = json.find(searchKey);
+            if (start != std::string::npos) {
+                start += searchKey.length();
+                size_t end = json.find("\"", start);
+                if (end != std::string::npos) {
+                    return json.substr(start, end - start);
+                }
+            }
+            return "";
+        }
 
-            DWORD flags = INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE | INTERNET_FLAG_SECURE;
-            HINTERNET hUrl = InternetOpenUrlA(hInternet, url.c_str(), NULL, 0, flags, 0);
-            if (!hUrl) {
+        std::string GetHWID() {
+            DWORD serialNumber = 0;
+            GetVolumeInformationA("C:\\", NULL, 0, &serialNumber, NULL, NULL, NULL, 0);
+
+            char compName[MAX_COMPUTERNAME_LENGTH + 1];
+            DWORD size = sizeof(compName);
+            GetComputerNameA(compName, &size);
+
+            std::stringstream ss;
+            ss << compName << "-" << std::hex << serialNumber;
+            return ss.str();
+        }
+
+    public:
+        KeyAuth(const std::string& host = "localhost", int port = 3000, bool https = false)
+            : serverHost(host), serverPort(port), isHttps(https) {}
+
+        // Verifikasi License Key Saja
+        AuthResponse AuthenticateKey(const std::string& licenseKey) {
+            AuthResponse resp;
+            
+            HINTERNET hInternet = InternetOpenA("KeyAuthClient/1.0", INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
+            if (!hInternet) {
+                resp.message = "Gagal menginisialisasi koneksi internet (WinINet).";
+                return resp;
+            }
+
+            HINTERNET hConnect = InternetConnectA(
+                hInternet, 
+                serverHost.c_str(), 
+                (INTERNET_PORT)serverPort, 
+                NULL, 
+                NULL, 
+                INTERNET_SERVICE_HTTP, 
+                0, 
+                0
+            );
+
+            if (!hConnect) {
                 InternetCloseHandle(hInternet);
-                return "";
+                resp.message = "Tidak dapat terhubung ke server " + serverHost + ":" + std::to_string(serverPort);
+                return resp;
+            }
+
+            std::string hwid = GetHWID();
+            std::string urlPath = "/api/verify?key=" + licenseKey + "&hwid=" + hwid;
+
+            DWORD flags = INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE;
+            if (isHttps) flags |= INTERNET_FLAG_SECURE;
+
+            HINTERNET hRequest = HttpOpenRequestA(hConnect, "GET", urlPath.c_str(), NULL, NULL, NULL, flags, 0);
+            if (!hRequest) {
+                InternetCloseHandle(hConnect);
+                InternetCloseHandle(hInternet);
+                resp.message = "Gagal membuat request HTTP ke server.";
+                return resp;
+            }
+
+            BOOL bSend = HttpSendRequestA(hRequest, NULL, 0, NULL, 0);
+            if (!bSend) {
+                InternetCloseHandle(hRequest);
+                InternetCloseHandle(hConnect);
+                InternetCloseHandle(hInternet);
+                resp.message = "Gagal mengirim data ke server. Pastikan server aktif!";
+                return resp;
             }
 
             char buffer[4096];
             DWORD bytesRead = 0;
-            std::string result = "";
-            while (InternetReadFile(hUrl, buffer, sizeof(buffer) - 1, &bytesRead) && bytesRead > 0) {
+            std::string responseBody = "";
+
+            while (InternetReadFile(hRequest, buffer, sizeof(buffer) - 1, &bytesRead) && bytesRead > 0) {
                 buffer[bytesRead] = '\0';
-                result += buffer;
+                responseBody += buffer;
             }
 
-            InternetCloseHandle(hUrl);
+            InternetCloseHandle(hRequest);
+            InternetCloseHandle(hConnect);
             InternetCloseHandle(hInternet);
-            return result;
-        }
 
-        // Helper to extract JSON string value
-        std::string ExtractField(const std::string& block, const std::string& field) {
-            std::string key = "\"" + field + "\"";
-            size_t pos = block.find(key);
-            if (pos == std::string::npos) return "";
-
-            size_t colon = block.find(":", pos);
-            if (colon == std::string::npos) return "";
-
-            size_t quoteStart = block.find("\"", colon);
-            if (quoteStart == std::string::npos) return "";
-
-            size_t quoteEnd = block.find("\"", quoteStart + 1);
-            if (quoteEnd == std::string::npos) return "";
-
-            return block.substr(quoteStart + 1, quoteEnd - quoteStart - 1);
-        }
-
-        // To uppercase
-        std::string ToUpper(std::string str) {
-            for (char &c : str) c = toupper(c);
-            return str;
-        }
-
-    public:
-        Client(const std::string& githubRawUrl) : rawJsonUrl(githubRawUrl) {}
-
-        LicenseInfo Verify(const std::string& inputUsername, const std::string& inputKey) {
-            LicenseInfo info;
-
-            if (inputUsername.empty() || inputKey.empty()) {
-                info.message = "Username dan Key tidak boleh kosong!";
-                return info;
-            }
-
-            std::string jsonData = DownloadString(rawJsonUrl);
-            if (jsonData.empty()) {
-                info.message = "Gagal mengunduh database lisensi dari GitHub. Periksa koneksi internet / URL raw!";
-                return info;
-            }
-
-            // Loop through each key object in the JSON
-            size_t pos = 0;
-            while ((pos = jsonData.find("{", pos)) != std::string::npos) {
-                size_t endPos = jsonData.find("}", pos);
-                if (endPos == std::string::npos) break;
-
-                std::string objectBlock = jsonData.substr(pos, endPos - pos + 1);
-                std::string uName = ExtractField(objectBlock, "username");
-                std::string lKey = ExtractField(objectBlock, "licenseKey");
-                std::string status = ExtractField(objectBlock, "status");
-                std::string exp = ExtractField(objectBlock, "expiresAt");
-                std::string notes = ExtractField(objectBlock, "notes");
-
-                if (ToUpper(uName) == ToUpper(inputUsername) && ToUpper(lKey) == ToUpper(inputKey)) {
-                    info.username = uName;
-                    info.licenseKey = lKey;
-                    info.status = status;
-                    info.expiresAt = exp;
-                    info.notes = notes;
-
-                    if (status != "active") {
-                        info.isValid = false;
-                        info.message = "Lisensi telah dinonaktifkan / diblokir (Status: " + status + ")!";
-                        return info;
-                    }
-
-                    info.isValid = true;
-                    info.message = "Autentikasi Berhasil!";
-                    return info;
+            if (responseBody.find("\"authenticated\":true") != std::string::npos) {
+                resp.success = true;
+                resp.status = "success";
+                resp.message = ExtractJsonValue(responseBody, "message");
+                resp.licenseKey = ExtractJsonValue(responseBody, "licenseKey");
+                resp.duration = ExtractJsonValue(responseBody, "duration");
+                resp.remaining = ExtractJsonValue(responseBody, "remaining");
+                resp.expiresAt = ExtractJsonValue(responseBody, "expiresAt");
+            } else {
+                resp.success = false;
+                resp.status = ExtractJsonValue(responseBody, "status");
+                resp.message = ExtractJsonValue(responseBody, "message");
+                if (resp.message.empty()) {
+                    resp.message = "Lisensi tidak ditemukan atau telah dihapus!";
                 }
-
-                pos = endPos + 1;
             }
 
-            info.isValid = false;
-            info.message = "Username atau License Key tidak ditemukan di GitHub!";
-            return info;
-        }
-
-        LicenseInfo VerifyKey(const std::string& inputKey) {
-            LicenseInfo info;
-
-            if (inputKey.empty()) {
-                info.message = "License Key tidak boleh kosong!";
-                return info;
-            }
-
-            std::string jsonData = DownloadString(rawJsonUrl);
-            if (jsonData.empty()) {
-                info.message = "Gagal mengunduh database lisensi dari GitHub. Periksa koneksi internet / URL raw!";
-                return info;
-            }
-
-            std::string targetKey = ToUpper(inputKey);
-
-            // Loop through each key object in the JSON
-            size_t pos = 0;
-            while ((pos = jsonData.find("{", pos)) != std::string::npos) {
-                size_t endPos = jsonData.find("}", pos);
-                if (endPos == std::string::npos) break;
-
-                std::string objectBlock = jsonData.substr(pos, endPos - pos + 1);
-                std::string uName = ExtractField(objectBlock, "username");
-                std::string lKey = ExtractField(objectBlock, "licenseKey");
-                std::string status = ExtractField(objectBlock, "status");
-                std::string exp = ExtractField(objectBlock, "expiresAt");
-                std::string notes = ExtractField(objectBlock, "notes");
-                std::string dur = ExtractField(objectBlock, "durationDays");
-
-                if (ToUpper(lKey) == targetKey) {
-                    info.username = uName.empty() ? "User" : uName;
-                    info.licenseKey = lKey;
-                    info.status = status;
-                    info.expiresAt = exp.empty() ? "Lifetime" : exp;
-                    info.notes = notes;
-
-                    if (status != "active") {
-                        info.isValid = false;
-                        info.message = "Lisensi telah dinonaktifkan / diblokir (Status: " + status + ")!";
-                        return info;
-                    }
-
-                    info.isValid = true;
-                    info.message = "Autentikasi Berhasil!";
-                    return info;
-                }
-
-                pos = endPos + 1;
-            }
-
-            info.isValid = false;
-            info.message = "License Key tidak ditemukan di GitHub!";
-            return info;
+            return resp;
         }
     };
 }

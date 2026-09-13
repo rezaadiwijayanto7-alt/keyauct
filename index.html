@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KeyAuth - GitHub Public Edition</title>
+    <title>KeyAuth Admin Server - License & Account Manager</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -15,8 +15,8 @@
                 extend: {
                     colors: {
                         brand: {
-                            500: '#6366f1',
-                            600: '#4f46e5',
+                            500: '#0284c7',
+                            600: '#0369a1',
                         }
                     }
                 }
@@ -32,99 +32,182 @@
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
     </style>
 </head>
-<body class="bg-[#0b0f19] text-slate-100 min-h-screen flex flex-col">
+<body class="bg-[#090d16] text-slate-100 min-h-screen flex flex-col">
 
-    <!-- Navbar -->
-    <header class="border-b border-slate-800 bg-[#0f172a]/90 backdrop-blur sticky top-0 z-50">
+    <!-- ADMIN LOGIN SCREEN (If not logged in) -->
+    <div id="admin-login-screen" class="fixed inset-0 bg-[#090d16] z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-8 shadow-2xl space-y-6">
+            <div class="text-center space-y-2">
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-600 to-indigo-600 flex items-center justify-center mx-auto shadow-lg shadow-sky-500/20">
+                    <i data-lucide="lock" class="w-7 h-7 text-white"></i>
+                </div>
+                <h2 class="text-xl font-extrabold text-white">Admin Dashboard Login</h2>
+                <p class="text-xs text-slate-400">Masukkan Username & Password Admin untuk mengakses server.</p>
+            </div>
+
+            <form id="admin-login-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Username Admin</label>
+                    <div class="relative">
+                        <i data-lucide="user" class="w-4 h-4 absolute left-3.5 top-3 text-slate-500"></i>
+                        <input type="text" id="admin-user-input" value="admin" required placeholder="admin"
+                            class="w-full bg-slate-800/80 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500 transition">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Password Admin</label>
+                    <div class="relative">
+                        <i data-lucide="key" class="w-4 h-4 absolute left-3.5 top-3 text-slate-500"></i>
+                        <input type="password" id="admin-pass-input" value="admin123" required placeholder="••••••••"
+                            class="w-full bg-slate-800/80 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-sky-500 transition">
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white text-sm font-semibold flex items-center justify-center gap-2 shadow-lg shadow-sky-600/25 transition">
+                    <i data-lucide="log-in" class="w-4 h-4"></i>
+                    <span>Masuk ke Dashboard</span>
+                </button>
+            </form>
+            <p class="text-[11px] text-center text-slate-500">Default Admin: <strong>admin</strong> / <strong>admin123</strong></p>
+        </div>
+    </div>
+
+    <!-- Top Navigation Header -->
+    <header class="border-b border-slate-800/80 bg-[#0f172a]/90 backdrop-blur sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                    <i data-lucide="github" class="w-6 h-6 text-white"></i>
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
+                    <i data-lucide="shield-check" class="w-6 h-6 text-white"></i>
                 </div>
                 <div>
                     <h1 class="font-bold text-base sm:text-lg text-white flex items-center gap-2">
-                        KeyAuth <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">GitHub Edition</span>
+                        KeyAuth Server Manager
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30">Pro Admin</span>
                     </h1>
-                    <p class="text-[11px] text-slate-400">100% Free Public Hosting via GitHub Pages & Raw JSON</p>
+                    <p class="text-[11px] text-slate-400">Pengelola Lisensi Key & Akun Username / Password</p>
                 </div>
             </div>
 
-            <div class="flex items-center space-x-2">
-                <button onclick="toggleSettingsModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 flex items-center gap-1.5 transition">
-                    <i data-lucide="settings" class="w-4 h-4 text-indigo-400"></i>
-                    <span>Pengaturan GitHub</span>
+            <div class="flex items-center space-x-3">
+                <button onclick="toggleChangePassModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 flex items-center gap-1.5 transition">
+                    <i data-lucide="key-round" class="w-4 h-4 text-sky-400"></i>
+                    <span>Ganti Pass Admin</span>
                 </button>
-                <a href="#cpp-section" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white flex items-center gap-1.5 transition">
-                    <i data-lucide="code-2" class="w-4 h-4"></i>
-                    <span>Kode C++</span>
-                </a>
+                <button onclick="logoutAdmin()" class="px-3 py-1.5 rounded-lg bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/30 text-xs font-semibold text-rose-300 flex items-center gap-1.5 transition">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                    <span>Keluar</span>
+                </button>
             </div>
         </div>
     </header>
 
-    <!-- Main Container -->
+    <!-- Main Content Dashboard -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 space-y-8 w-full">
 
-        <!-- GitHub Info Banner -->
-        <div class="bg-gradient-to-r from-indigo-950/60 via-slate-900 to-slate-900 border border-indigo-900/40 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div class="flex items-start gap-3">
-                <div class="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 mt-0.5">
-                    <i data-lucide="globe" class="w-5 h-5"></i>
-                </div>
+        <!-- Stat & Action Control Panel -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 backdrop-blur flex items-center justify-between">
                 <div>
-                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                        Public URL Raw JSON Database
-                        <span id="repo-status-badge" class="text-[10px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">Belum disetting</span>
-                    </h3>
-                    <p class="text-xs text-slate-400 mt-0.5" id="github-url-display">https://raw.githubusercontent.com/USERNAME/REPO/main/keys.json</p>
+                    <span class="text-xs font-medium text-slate-400">Total Akun / Lisensi</span>
+                    <div class="mt-1 text-2xl font-bold text-white" id="stat-total">0</div>
+                </div>
+                <div class="p-3 rounded-xl bg-sky-500/10 text-sky-400">
+                    <i data-lucide="users" class="w-6 h-6"></i>
                 </div>
             </div>
-            <div class="flex items-center gap-2 w-full md:w-auto">
-                <button onclick="copyGithubUrl()" class="w-full md:w-auto px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-indigo-300 flex items-center justify-center gap-1.5 transition">
-                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-                    <span>Salin Raw URL</span>
-                </button>
-                <button onclick="downloadKeysJson()" class="w-full md:w-auto px-3.5 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-xs font-medium text-emerald-300 flex items-center justify-center gap-1.5 transition">
-                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
-                    <span>Download keys.json</span>
-                </button>
+
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 backdrop-blur flex items-center justify-between">
+                <div>
+                    <span class="text-xs font-medium text-slate-400">Lisensi Aktif</span>
+                    <div class="mt-1 text-2xl font-bold text-cyan-400" id="stat-active">0</div>
+                </div>
+                <div class="p-3 rounded-xl bg-cyan-500/10 text-cyan-400">
+                    <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+                </div>
+            </div>
+
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 backdrop-blur flex items-center justify-between">
+                <div>
+                    <span class="text-xs font-medium text-slate-400">Lisensi Dijeda / Kadaluarsa</span>
+                    <div class="mt-1 text-2xl font-bold text-amber-400" id="stat-inactive">0</div>
+                </div>
+                <div class="p-3 rounded-xl bg-amber-500/10 text-amber-400">
+                    <i data-lucide="pause-circle" class="w-6 h-6"></i>
+                </div>
+            </div>
+
+            <!-- Global Action Controls -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 backdrop-blur flex flex-col justify-center gap-2">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Aksi Semua Lisensi</span>
+                <div class="grid grid-cols-3 gap-1.5">
+                    <button onclick="pauseAllKeys()" class="py-1.5 px-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 text-[11px] font-semibold text-amber-300 transition flex items-center justify-center gap-1">
+                        <i data-lucide="pause" class="w-3.5 h-3.5"></i> Jeda All
+                    </button>
+                    <button onclick="unpauseAllKeys()" class="py-1.5 px-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-[11px] font-semibold text-emerald-300 transition flex items-center justify-center gap-1">
+                        <i data-lucide="play" class="w-3.5 h-3.5"></i> Aktif All
+                    </button>
+                    <button onclick="addTimeAllKeys()" class="py-1.5 px-2 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/30 text-[11px] font-semibold text-sky-300 transition flex items-center justify-center gap-1">
+                        <i data-lucide="clock" class="w-3.5 h-3.5"></i> +7 Hari
+                    </button>
+                </div>
             </div>
         </div>
 
-        <!-- Grid Cards -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
-            <!-- Left Column: Add Key Form -->
-            <div class="lg:col-span-1 bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5">
+            <!-- Form Card: Tambah Key / User -->
+            <div class="lg:col-span-1 bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5">
                 <div>
                     <h2 class="text-base font-bold text-white flex items-center gap-2">
-                        <i data-lucide="key-round" class="w-5 h-5 text-indigo-400"></i>
-                        Tambah Key & User Baru
+                        <i data-lucide="plus-circle" class="w-5 h-5 text-sky-400"></i>
+                        Buat Lisensi / Akun Baru
                     </h2>
-                    <p class="text-xs text-slate-400 mt-1">Buat lisensi yang bisa diakses publik di C++.</p>
+                    <p class="text-xs text-slate-400 mt-1">Pilih tipe mode autentikasi di bawah ini.</p>
                 </div>
 
-                <form id="key-form" class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Username Pengguna</label>
-                        <input type="text" id="username" required placeholder="Contoh: user_john"
-                            class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
+                <!-- Auth Type Selector (License Only OR Username + Password) -->
+                <div class="grid grid-cols-2 gap-2 p-1 bg-slate-950 rounded-xl border border-slate-800 text-xs font-semibold">
+                    <button type="button" id="tab-mode-key" onclick="switchAuthMode('license_only')" class="py-2 rounded-lg bg-sky-600 text-white transition flex items-center justify-center gap-1">
+                        <i data-lucide="key" class="w-3.5 h-3.5"></i> License Only
+                    </button>
+                    <button type="button" id="tab-mode-userpass" onclick="switchAuthMode('user_pass')" class="py-2 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1">
+                        <i data-lucide="user-check" class="w-3.5 h-3.5"></i> User + Pass
+                    </button>
+                </div>
+
+                <form id="create-key-form" class="space-y-4">
+                    <!-- User & Pass Inputs (Shown if mode = user_pass) -->
+                    <div id="userpass-inputs-container" class="hidden space-y-3 p-3 rounded-xl bg-slate-800/40 border border-slate-700/60">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1">Username Pengguna</label>
+                            <input type="text" id="input-username" placeholder="Contoh: user_john" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1">Password Pengguna</label>
+                            <input type="text" id="input-password" placeholder="Contoh: pass123" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500">
+                        </div>
                     </div>
 
+                    <!-- License Key Input -->
                     <div>
-                        <div class="flex items-center justify-between mb-1">
+                        <div class="flex items-center justify-between mb-1.5">
                             <label class="text-xs font-medium text-slate-300">License Key</label>
-                            <button type="button" onclick="autoGenerateKey()" class="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
-                                <i data-lucide="sparkles" class="w-3 h-3"></i> Acak Key
+                            <button type="button" id="btn-generate-random" class="text-xs text-sky-400 hover:text-sky-300 flex items-center gap-1 font-medium transition">
+                                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Generate Acak
                             </button>
                         </div>
-                        <input type="text" id="licenseKey" required placeholder="KEY-XXXX-XXXX-XXXX"
-                            class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-indigo-300 font-mono focus:outline-none focus:border-indigo-500 transition">
+                        <div class="relative">
+                            <i data-lucide="key-round" class="w-4 h-4 absolute left-3.5 top-3 text-slate-500"></i>
+                            <input type="text" id="input-key" placeholder="KEY-XXXX-XXXX-XXXX"
+                                class="w-full bg-slate-800/80 border border-slate-700 rounded-xl pl-10 pr-4 py-2 text-sm text-sky-300 font-mono focus:outline-none focus:border-sky-500 transition">
+                        </div>
                     </div>
 
+                    <!-- Duration Selector -->
                     <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Masa Berlaku</label>
-                        <select id="duration" class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Masa Berlaku (Durasi)</label>
+                        <select id="input-duration" class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-sky-500 transition">
                             <option value="1">1 Hari (Trial)</option>
                             <option value="7">7 Hari (1 Minggu)</option>
                             <option value="30" selected>30 Hari (1 Bulan)</option>
@@ -134,441 +217,463 @@
                         </select>
                     </div>
 
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Catatan / Keterangan</label>
-                        <input type="text" id="notes" placeholder="Contoh: Discord VIP Member"
-                            class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
+                    <!-- One-Time Checkbox -->
+                    <div class="flex items-center gap-2 p-3 rounded-xl bg-slate-800/40 border border-slate-700/50">
+                        <input type="checkbox" id="input-onetime" class="w-4 h-4 rounded text-sky-600 focus:ring-sky-500 bg-slate-900 border-slate-700">
+                        <label for="input-onetime" class="text-xs text-slate-300 cursor-pointer">
+                            <span class="font-bold text-white">Lisensi Sekali Pakai (One-Time)</span>
+                            <span class="block text-[11px] text-slate-400">Otomatis hangus / tidak bisa digunakan lagi setelah login.</span>
+                        </label>
                     </div>
 
-                    <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/25 transition">
+                    <!-- Notes Input -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Catatan (Opsional)</label>
+                        <input type="text" id="input-notes" placeholder="Catatan lisensi..."
+                            class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 transition">
+                    </div>
+
+                    <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white text-sm font-semibold flex items-center justify-center gap-2 shadow-lg shadow-sky-600/20 transition">
                         <i data-lucide="plus" class="w-4 h-4"></i>
-                        <span>Tambahkan ke Database</span>
+                        <span>Simpan Lisensi</span>
                     </button>
                 </form>
 
-                <!-- Mini Verification Tester -->
+                <!-- Tester Widget -->
                 <div class="border-t border-slate-800 pt-4 space-y-3">
                     <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                        <i data-lucide="flask-conical" class="w-4 h-4 text-violet-400"></i>
-                        Uji Verifikasi Offline / Online
+                        <i data-lucide="flask-conical" class="w-4 h-4 text-sky-400"></i>
+                        Test Uji Verifikasi Server
                     </h3>
-                    <input type="text" id="test-user" placeholder="Username uji" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white">
-                    <input type="text" id="test-key" placeholder="Key uji" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-indigo-300 font-mono">
-                    <button onclick="testVerify()" class="w-full py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 transition">
-                        Cek Validitas
+                    <input type="text" id="test-key-input" placeholder="License Key atau Username" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-sky-300 font-mono">
+                    <input type="text" id="test-pass-input" placeholder="Password (Jika mode User+Pass)" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white">
+                    <button type="button" id="btn-run-test" class="w-full py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 transition flex items-center justify-center gap-1.5">
+                        <i data-lucide="play" class="w-3.5 h-3.5 text-sky-400"></i>
+                        <span>Jalankan Cek Lisensi</span>
                     </button>
-                    <div id="test-res" class="hidden text-xs p-3 rounded-lg border font-mono"></div>
+                    <div id="test-result" class="hidden text-xs p-3 rounded-lg border font-mono"></div>
                 </div>
             </div>
 
-            <!-- Right Column: Keys Table -->
-            <div class="lg:col-span-2 bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col space-y-4">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <!-- Table Card: Daftar Lisensi & Akun -->
+            <div class="lg:col-span-2 bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <h2 class="text-base font-bold text-white flex items-center gap-2">
-                            <i data-lucide="database" class="w-5 h-5 text-indigo-400"></i>
-                            Daftar Lisensi (<span id="key-count">0</span>)
+                            <i data-lucide="database" class="w-5 h-5 text-sky-400"></i>
+                            Daftar Lisensi & Akun Terdaftar
                         </h2>
-                        <p class="text-xs text-slate-400">Semua key yang tersimpan di sistem.</p>
+                        <p class="text-xs text-slate-400 mt-0.5">Kelola seluruh lisensi key, username/password, dan HWID.</p>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <input type="text" id="search-bar" oninput="filterKeys()" placeholder="Cari user / key..."
-                            class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500">
-                        <button onclick="syncWithGitHub()" id="btn-sync-gh" class="px-3 py-1.5 rounded-xl bg-violet-600/20 hover:bg-violet-600/30 border border-violet-500/30 text-xs font-medium text-violet-300 flex items-center gap-1.5 transition">
-                            <i data-lucide="cloud-upload" class="w-3.5 h-3.5"></i>
-                            <span>Push ke GitHub</span>
-                        </button>
+
+                    <div class="relative min-w-[220px]">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-500"></i>
+                        <input type="text" id="table-search" placeholder="Cari key / user / catatan..."
+                            class="w-full bg-slate-800/80 border border-slate-700 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 transition">
                     </div>
                 </div>
 
                 <!-- Table -->
-                <div class="flex-1 overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/40">
+                <div class="flex-1 overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/50">
                     <table class="w-full text-left text-xs">
                         <thead class="bg-slate-800/60 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
                             <tr>
-                                <th class="py-3 px-4">Pengguna</th>
-                                <th class="py-3 px-4">License Key</th>
-                                <th class="py-3 px-4">Masa Berlaku</th>
+                                <th class="py-3 px-4">Tipe & Lisensi</th>
+                                <th class="py-3 px-4">Akun (User/Pass)</th>
+                                <th class="py-3 px-4">Durasi / Sisa</th>
+                                <th class="py-3 px-4">Terikat HWID</th>
                                 <th class="py-3 px-4">Status</th>
                                 <th class="py-3 px-4 text-right">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody id="table-body" class="divide-y divide-slate-800/60 text-slate-300">
-                            <!-- Injected by JS -->
+                        <tbody id="keys-table-body" class="divide-y divide-slate-800/60 font-medium text-slate-300">
+                            <tr>
+                                <td colspan="6" class="py-8 text-center text-slate-500">Memuat data lisensi...</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
 
-                <div class="p-3 rounded-xl bg-slate-800/40 border border-slate-700/50 text-[11px] text-slate-400 flex items-start gap-2">
-                    <i data-lucide="info" class="w-4 h-4 text-indigo-400 shrink-0 mt-0.5"></i>
-                    <span>
-                        <strong>Tips GitHub Hosting:</strong> Jika Anda menggunakan token GitHub (di Pengaturan), setiap perubahan akan langsung tersimpan otomatis ke file <code>keys.json</code> di repo GitHub Anda!
-                    </span>
+                <div class="flex items-center justify-between text-xs text-slate-500 pt-2">
+                    <span id="table-count-label">Menampilkan 0 lisensi</span>
+                    <button id="btn-refresh-table" class="hover:text-slate-300 flex items-center gap-1 transition">
+                        <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i> Segarkan Data
+                    </button>
                 </div>
             </div>
-        </div>
-
-        <!-- C++ Integration Guide -->
-        <div id="cpp-section" class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h2 class="text-base font-bold text-white flex items-center gap-2">
-                        <i data-lucide="file-code" class="w-5 h-5 text-indigo-400"></i>
-                        Kode C++ (Terkoneksi Otomatis ke GitHub Anda)
-                    </h2>
-                    <p class="text-xs text-slate-400">Gunakan kode ini di C++ untuk memverifikasi lisensi langsung dari GitHub.</p>
-                </div>
-                <button onclick="copyCppCode()" class="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white flex items-center gap-1.5 transition">
-                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-                    <span>Salin Kode C++</span>
-                </button>
-            </div>
-
-            <pre class="bg-slate-950 p-4 rounded-xl border border-slate-800 overflow-x-auto text-xs font-mono text-indigo-200/90 leading-relaxed"><code id="cpp-code-display">// Mengambil data dari GitHub...</code></pre>
         </div>
 
     </main>
 
-    <!-- Settings Modal -->
-    <div id="settings-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <!-- Change Admin Password Modal -->
+    <div id="change-pass-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
             <div class="flex items-center justify-between">
                 <h3 class="text-base font-bold text-white flex items-center gap-2">
-                    <i data-lucide="github" class="w-5 h-5 text-indigo-400"></i>
-                    Pengaturan Repositori GitHub
+                    <i data-lucide="key-round" class="w-5 h-5 text-sky-400"></i>
+                    Ganti Kredensial Admin Server
                 </h3>
-                <button onclick="toggleSettingsModal()" class="text-slate-400 hover:text-white">
+                <button onclick="toggleChangePassModal()" class="text-slate-400 hover:text-white">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
 
-            <div class="space-y-3 text-xs">
+            <form id="change-pass-form" class="space-y-3 text-xs">
                 <div>
-                    <label class="block text-slate-300 font-medium mb-1">GitHub Username</label>
-                    <input type="text" id="cfg-user" placeholder="Contoh: myusername" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white">
+                    <label class="block text-slate-300 font-medium mb-1">Username Admin Baru</label>
+                    <input type="text" id="new-admin-user" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white">
                 </div>
                 <div>
-                    <label class="block text-slate-300 font-medium mb-1">Repository Name</label>
-                    <input type="text" id="cfg-repo" placeholder="Contoh: my-keyauth-system" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white">
+                    <label class="block text-slate-300 font-medium mb-1">Password Admin Baru</label>
+                    <input type="password" id="new-admin-pass" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white">
                 </div>
-                <div>
-                    <label class="block text-slate-300 font-medium mb-1">Branch Name</label>
-                    <input type="text" id="cfg-branch" value="main" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white">
+                <div class="flex items-center justify-end gap-2 pt-2">
+                    <button type="button" onclick="toggleChangePassModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300">Batal</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-xs font-semibold text-white">Simpan Perubahan</button>
                 </div>
-                <div>
-                    <div class="flex items-center justify-between mb-1">
-                        <label class="text-slate-300 font-medium">GitHub Personal Access Token (Opsional)</label>
-                        <a href="https://github.com/settings/tokens" target="_blank" class="text-indigo-400 hover:underline">Buat Token</a>
-                    </div>
-                    <input type="password" id="cfg-token" placeholder="ghp_xxxxxxxxxxxx" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white">
-                    <p class="text-[11px] text-slate-500 mt-1">Jika diisi, Anda bisa update <code>keys.json</code> di GitHub secara instan tanpa perlu git push manual.</p>
-                </div>
-            </div>
-
-            <div class="flex items-center justify-end gap-2 pt-2">
-                <button onclick="toggleSettingsModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300">Batal</button>
-                <button onclick="saveSettings()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white">Simpan Pengaturan</button>
-            </div>
+            </form>
         </div>
     </div>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed bottom-5 right-5 hidden z-50 px-4 py-3 rounded-xl shadow-2xl text-xs font-medium flex items-center gap-2 border"></div>
+    <!-- Blue Checkmark Notification Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 hidden z-50 px-4 py-3 rounded-xl shadow-2xl text-xs font-medium flex items-center gap-2 border backdrop-blur"></div>
 
     <script>
         lucide.createIcons();
 
-        // State & LocalStorage
-        const STORAGE_KEY = 'gh_keyauth_data';
-        const CONFIG_KEY = 'gh_keyauth_config';
+        let currentAuthMode = 'license_only';
 
-        let appData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
-            updatedAt: new Date().toISOString(),
-            keys: [
-                {
-                    username: "tester1",
-                    licenseKey: "KEY-TEST-1234-5678",
-                    durationDays: 30,
-                    createdAt: new Date().toISOString(),
-                    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                    status: "active",
-                    notes: "Demo User"
-                }
-            ]
-        };
+        function switchAuthMode(mode) {
+            currentAuthMode = mode;
+            const btnKey = document.getElementById('tab-mode-key');
+            const btnUserPass = document.getElementById('tab-mode-userpass');
+            const userPassContainer = document.getElementById('userpass-inputs-container');
 
-        let appConfig = JSON.parse(localStorage.getItem(CONFIG_KEY)) || {
-            user: "rezaadiwijayanto7-alt",
-            repo: "keyauct",
-            branch: "main",
-            token: ""
-        };
-
-        function saveLocal() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
-            updateUI();
+            if (mode === 'license_only') {
+                btnKey.className = "py-2 rounded-lg bg-sky-600 text-white transition flex items-center justify-center gap-1 font-semibold";
+                btnUserPass.className = "py-2 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1";
+                userPassContainer.classList.add('hidden');
+            } else {
+                btnUserPass.className = "py-2 rounded-lg bg-sky-600 text-white transition flex items-center justify-center gap-1 font-semibold";
+                btnKey.className = "py-2 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1";
+                userPassContainer.classList.remove('hidden');
+            }
         }
 
         function showToast(msg, type = 'success') {
             const toast = document.getElementById('toast');
-            toast.className = `fixed bottom-5 right-5 z-50 px-4 py-3 rounded-xl shadow-2xl text-xs font-semibold flex items-center gap-2 border backdrop-blur ${
-                type === 'success' ? 'bg-emerald-950/90 text-emerald-300 border-emerald-800' : 'bg-rose-950/90 text-rose-300 border-rose-800'
-            }`;
-            toast.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle-2' : 'alert-circle'}" class="w-4 h-4"></i> <span>${msg}</span>`;
+            if (type === 'success') {
+                toast.className = "fixed bottom-5 right-5 z-50 px-4 py-3 rounded-xl shadow-2xl text-xs font-semibold flex items-center gap-2.5 border backdrop-blur bg-cyan-950/90 text-cyan-300 border-cyan-700/80 shadow-cyan-950/50";
+                toast.innerHTML = `<div class="p-1 rounded-full bg-cyan-500/20 text-cyan-400"><i data-lucide="check-circle-2" class="w-4 h-4 text-cyan-400"></i></div> <span>${msg}</span>`;
+            } else {
+                toast.className = "fixed bottom-5 right-5 z-50 px-4 py-3 rounded-xl shadow-2xl text-xs font-semibold flex items-center gap-2.5 border backdrop-blur bg-rose-950/90 text-rose-300 border-rose-800 shadow-rose-950/50";
+                toast.innerHTML = `<div class="p-1 rounded-full bg-rose-500/20 text-rose-400"><i data-lucide="alert-circle" class="w-4 h-4 text-rose-400"></i></div> <span>${msg}</span>`;
+            }
             toast.classList.remove('hidden');
             lucide.createIcons();
             setTimeout(() => toast.classList.add('hidden'), 3500);
         }
 
-        function autoGenerateKey() {
+        // Admin Auth Check
+        function checkAdminSession() {
+            const token = sessionStorage.getItem('admin_token');
+            const loginScreen = document.getElementById('admin-login-screen');
+            if (!token) {
+                loginScreen.classList.remove('hidden');
+            } else {
+                loginScreen.classList.add('hidden');
+                loadKeys();
+            }
+        }
+
+        document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('admin-user-input').value;
+            const password = document.getElementById('admin-pass-input').value;
+
+            try {
+                const res = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    sessionStorage.setItem('admin_token', data.token);
+                    document.getElementById('admin-login-screen').classList.add('hidden');
+                    showToast('Selamat datang, Admin!', 'success');
+                    loadKeys();
+                } else {
+                    showToast(data.message || 'Login gagal!', 'error');
+                }
+            } catch (err) {
+                showToast('Error koneksi ke server API', 'error');
+            }
+        });
+
+        function logoutAdmin() {
+            sessionStorage.removeItem('admin_token');
+            checkAdminSession();
+        }
+
+        function toggleChangePassModal() {
+            const modal = document.getElementById('change-pass-modal');
+            modal.classList.toggle('hidden');
+        }
+
+        document.getElementById('change-pass-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newUsername = document.getElementById('new-admin-user').value;
+            const newPassword = document.getElementById('new-admin-pass').value;
+
+            try {
+                const res = await fetch('/api/admin/change-pass', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ newUsername, newPassword })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('Kredensial Admin berhasil diperbarui!', 'success');
+                    toggleChangePassModal();
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (err) {
+                showToast('Error pengubahan data admin', 'error');
+            }
+        });
+
+        function generateRandomKey() {
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
             const part = () => {
                 let s = '';
                 for (let i = 0; i < 4; i++) s += chars.charAt(Math.floor(Math.random() * chars.length));
                 return s;
             };
-            document.getElementById('licenseKey').value = `KEY-${part()}-${part()}-${part()}`;
+            return `KEY-${part()}-${part()}-${part()}`;
         }
 
-        function getRawUrl() {
-            return `https://raw.githubusercontent.com/${appConfig.user}/${appConfig.repo}/${appConfig.branch}/keys.json`;
-        }
+        document.getElementById('btn-generate-random').addEventListener('click', () => {
+            document.getElementById('input-key').value = generateRandomKey();
+        });
 
-        function updateUI() {
-            // Update URL display
-            const rawUrl = getRawUrl();
-            document.getElementById('github-url-display').innerText = rawUrl;
-            document.getElementById('key-count').innerText = appData.keys.length;
+        let cachedKeys = [];
 
-            const badge = document.getElementById('repo-status-badge');
-            if (appConfig.user !== 'YOUR_GITHUB_USERNAME' && appConfig.repo !== 'YOUR_REPO_NAME') {
-                badge.className = "text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20";
-                badge.innerText = "Configured";
-            } else {
-                badge.className = "text-[10px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20";
-                badge.innerText = "Belum Disetting";
+        async function loadKeys() {
+            try {
+                const res = await fetch('/api/keys');
+                const data = await res.json();
+                if (data.success) {
+                    cachedKeys = data.keys || [];
+                    renderTable(cachedKeys);
+                    updateStats(cachedKeys);
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Gagal terhubung ke API server', 'error');
             }
+        }
 
-            // Render Table
-            renderTable(appData.keys);
-
-            // Update C++ Code block
-            updateCppBlock();
+        function updateStats(keys) {
+            document.getElementById('stat-total').innerText = keys.length;
+            const active = keys.filter(k => k.status === 'active').length;
+            const inactive = keys.filter(k => k.status !== 'active').length;
+            document.getElementById('stat-active').innerText = active;
+            document.getElementById('stat-inactive').innerText = inactive;
         }
 
         function renderTable(keys) {
-            const tbody = document.getElementById('table-body');
+            const tbody = document.getElementById('keys-table-body');
+            document.getElementById('table-count-label').innerText = `Menampilkan ${keys.length} lisensi`;
+
             if (keys.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-500">Belum ada lisensi.</td></tr>`;
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="py-8 text-center text-slate-500">
+                            <i data-lucide="key" class="w-8 h-8 mx-auto mb-2 opacity-30"></i>
+                            Belum ada lisensi. Buat lisensi baru di form sebelah kiri!
+                        </td>
+                    </tr>
+                `;
+                lucide.createIcons();
                 return;
             }
 
-            tbody.innerHTML = keys.map((k, idx) => {
+            tbody.innerHTML = keys.map(k => {
                 const isActive = k.status === 'active';
-                let remaining = 'Lifetime';
+                let remainingText = 'Lifetime';
                 if (k.expiresAt) {
                     const diff = new Date(k.expiresAt).getTime() - Date.now();
                     const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-                    remaining = days > 0 ? `${days} hari lagi` : 'Kadaluarsa';
+                    remainingText = days > 0 ? `${days} hari lagi` : 'Kadaluarsa';
                 }
+
+                let statusBadge = '';
+                if (k.status === 'active') {
+                    statusBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"><span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>Aktif</span>`;
+                } else if (k.status === 'paused') {
+                    statusBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20"><span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>Dijeda</span>`;
+                } else if (k.status === 'used') {
+                    statusBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20"><span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>Terpakai</span>`;
+                } else {
+                    statusBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20"><span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>${k.status}</span>`;
+                }
+
+                const isUserPass = k.type === 'user_pass';
 
                 return `
                     <tr class="hover:bg-slate-800/30 transition">
                         <td class="py-3 px-4">
-                            <div class="font-semibold text-white">${k.username}</div>
-                            ${k.notes ? `<div class="text-[11px] text-slate-500 truncate max-w-[150px]">${k.notes}</div>` : ''}
-                        </td>
-                        <td class="py-3 px-4">
                             <div class="flex items-center gap-1.5">
-                                <span class="font-mono text-indigo-300 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">${k.licenseKey}</span>
-                                <button onclick="copyText('${k.licenseKey}')" class="p-1 text-slate-400 hover:text-white" title="Salin Key">
+                                <span class="font-mono text-sky-300 bg-slate-900 px-2 py-0.5 rounded border border-slate-800 font-semibold">${k.licenseKey}</span>
+                                <button onclick="copyText('${k.licenseKey}')" class="p-1 hover:text-white text-slate-400 transition" title="Salin Key">
                                     <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                                 </button>
                             </div>
+                            ${k.notes ? `<div class="text-[11px] text-slate-500 mt-0.5 truncate max-w-[160px]">${k.notes}</div>` : ''}
+                            ${k.isOneTime ? `<div class="text-[10px] text-purple-400 font-semibold mt-0.5">⚡ Sekali Pakai</div>` : ''}
                         </td>
                         <td class="py-3 px-4">
-                            <div class="text-slate-300">${k.durationDays === -1 ? 'Lifetime' : k.durationDays + ' Hari'}</div>
-                            <div class="text-[11px] ${isActive && remaining !== 'Kadaluarsa' ? 'text-emerald-400' : 'text-rose-400'}">${remaining}</div>
+                            ${isUserPass ? `
+                                <div class="font-semibold text-white">${k.username}</div>
+                                <div class="text-[11px] font-mono text-slate-400">Pass: ${k.password}</div>
+                            ` : `<span class="text-slate-500 text-[11px] italic">License Only</span>`}
                         </td>
                         <td class="py-3 px-4">
-                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${
-                                isActive ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                            }">
-                                <span class="w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-400' : 'bg-rose-400'}"></span>
-                                ${isActive ? 'Aktif' : 'Nonaktif'}
-                            </span>
+                            <div class="text-slate-200">${k.durationDays === -1 ? 'Lifetime' : k.durationDays + ' Hari'}</div>
+                            <div class="text-[11px] ${isActive && remainingText !== 'Kadaluarsa' ? 'text-cyan-400' : 'text-rose-400'}">${remainingText}</div>
                         </td>
+                        <td class="py-3 px-4">
+                            ${k.hwid ? `
+                                <div class="flex items-center gap-1">
+                                    <span class="font-mono text-[11px] text-slate-400 bg-slate-950 px-1.5 py-0.5 rounded truncate max-w-[100px]" title="${k.hwid}">${k.hwid}</span>
+                                    <button onclick="resetHwid('${k.id}')" class="p-1 text-xs text-amber-400 hover:text-amber-300" title="Reset Binding HWID">
+                                        <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+                                    </button>
+                                </div>
+                            ` : `<span class="text-slate-500 text-[11px]">Belum Terikat</span>`}
+                        </td>
+                        <td class="py-3 px-4">${statusBadge}</td>
                         <td class="py-3 px-4 text-right">
-                            <button onclick="deleteKey('${k.licenseKey}')" class="p-1 text-slate-400 hover:text-rose-400" title="Hapus">
-                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                            </button>
+                            <div class="flex items-center justify-end gap-1">
+                                <button onclick="toggleBanKey('${k.id}')" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 transition" title="Toggle Ban">
+                                    ${k.status === 'banned' ? 'Unban' : 'Ban'}
+                                </button>
+                                <button onclick="deleteKey('${k.id}')" class="p-1 rounded hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition" title="Hapus Key">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 `;
             }).join('');
+
             lucide.createIcons();
         }
 
-        function filterKeys() {
-            const q = document.getElementById('search-bar').value.toLowerCase();
-            const filtered = appData.keys.filter(k => 
-                k.username.toLowerCase().includes(q) || 
+        document.getElementById('table-search').addEventListener('input', (e) => {
+            const q = e.target.value.toLowerCase();
+            const filtered = cachedKeys.filter(k => 
                 k.licenseKey.toLowerCase().includes(q) ||
-                (k.notes && k.notes.toLowerCase().includes(q))
+                (k.username && k.username.toLowerCase().includes(q)) ||
+                (k.notes && k.notes.toLowerCase().includes(q)) ||
+                (k.hwid && k.hwid.toLowerCase().includes(q))
             );
             renderTable(filtered);
-        }
+        });
 
-        // Add Key Handler
-        document.getElementById('key-form').addEventListener('submit', (e) => {
+        document.getElementById('create-key-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const username = document.getElementById('username').value.trim();
-            const licenseKey = document.getElementById('licenseKey').value.trim().toUpperCase();
-            const duration = parseInt(document.getElementById('duration').value, 10);
-            const notes = document.getElementById('notes').value.trim();
+            const authType = currentAuthMode;
+            const username = document.getElementById('input-username').value;
+            const password = document.getElementById('input-password').value;
+            let licenseKey = document.getElementById('input-key').value;
+            const durationDays = document.getElementById('input-duration').value;
+            const isOneTime = document.getElementById('input-onetime').checked;
+            const notes = document.getElementById('input-notes').value;
 
-            if (appData.keys.some(k => k.licenseKey === licenseKey)) {
-                showToast('License Key ini sudah ada di database!', 'error');
-                return;
-            }
-
-            const now = new Date();
-            let expiresAt = null;
-            if (duration > 0) {
-                expiresAt = new Date(now.getTime() + duration * 24 * 60 * 60 * 1000).toISOString();
-            }
-
-            appData.keys.unshift({
-                username,
-                licenseKey,
-                durationDays: duration,
-                createdAt: now.toISOString(),
-                expiresAt: expiresAt,
-                status: 'active',
-                notes: notes
-            });
-            appData.updatedAt = now.toISOString();
-
-            saveLocal();
-            document.getElementById('key-form').reset();
-            showToast(`Key untuk "${username}" berhasil ditambahkan!`, 'success');
-
-            if (appConfig.token) {
-                syncWithGitHub();
+            try {
+                const res = await fetch('/api/keys', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ authType, username, password, licenseKey, durationDays, isOneTime, notes })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('Lisensi / Akun berhasil dibuat!', 'success');
+                    document.getElementById('create-key-form').reset();
+                    loadKeys();
+                } else {
+                    showToast(data.message || 'Gagal membuat data', 'error');
+                }
+            } catch (err) {
+                showToast('Error koneksi ke server API', 'error');
             }
         });
 
-        function deleteKey(keyStr) {
-            if (!confirm(`Hapus key ${keyStr}?`)) return;
-            appData.keys = appData.keys.filter(k => k.licenseKey !== keyStr);
-            appData.updatedAt = new Date().toISOString();
-            saveLocal();
-            showToast('Key berhasil dihapus!', 'success');
-            if (appConfig.token) {
-                syncWithGitHub();
-            }
-        }
-
-        // Settings Modal
-        function toggleSettingsModal() {
-            const modal = document.getElementById('settings-modal');
-            modal.classList.toggle('hidden');
-            if (!modal.classList.contains('hidden')) {
-                document.getElementById('cfg-user').value = appConfig.user === 'YOUR_GITHUB_USERNAME' ? '' : appConfig.user;
-                document.getElementById('cfg-repo').value = appConfig.repo === 'YOUR_REPO_NAME' ? '' : appConfig.repo;
-                document.getElementById('cfg-branch').value = appConfig.branch || 'main';
-                document.getElementById('cfg-token').value = appConfig.token || '';
-            }
-        }
-
-        function saveSettings() {
-            appConfig.user = document.getElementById('cfg-user').value.trim() || 'YOUR_GITHUB_USERNAME';
-            appConfig.repo = document.getElementById('cfg-repo').value.trim() || 'YOUR_REPO_NAME';
-            appConfig.branch = document.getElementById('cfg-branch').value.trim() || 'main';
-            appConfig.token = document.getElementById('cfg-token').value.trim();
-
-            localStorage.setItem(CONFIG_KEY, JSON.stringify(appConfig));
-            toggleSettingsModal();
-            updateUI();
-            showToast('Pengaturan GitHub berhasil disimpan!', 'success');
-        }
-
-        // Sync directly to GitHub Repo via GitHub REST API
-        async function syncWithGitHub() {
-            if (!appConfig.token) {
-                showToast('Token GitHub belum diisi! Buka Pengaturan GitHub.', 'error');
-                toggleSettingsModal();
-                return;
-            }
-
-            const btn = document.getElementById('btn-sync-gh');
-            btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> <span>Syncing...</span>`;
-            lucide.createIcons();
-
-            const path = 'keys.json';
-            const apiUrl = `https://api.github.com/repos/${appConfig.user}/${appConfig.repo}/contents/${path}`;
-
+        async function deleteKey(id) {
+            if (!confirm('Hapus lisensi ini secara permanen dari server?')) return;
             try {
-                // Get current SHA if file exists
-                let sha = null;
-                const getRes = await fetch(apiUrl, {
-                    headers: { 'Authorization': `token ${appConfig.token}` }
-                });
-
-                if (getRes.ok) {
-                    const getData = await getRes.json();
-                    sha = getData.sha;
-                }
-
-                // Prepare content (Base64)
-                const contentStr = JSON.stringify(appData, null, 2);
-                const contentB64 = btoa(unescape(encodeURIComponent(contentStr)));
-
-                const putBody = {
-                    message: `Update keys.json via KeyAuth Dashboard [${new Date().toLocaleString()}]`,
-                    content: contentB64,
-                    branch: appConfig.branch
-                };
-                if (sha) putBody.sha = sha;
-
-                const putRes = await fetch(apiUrl, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `token ${appConfig.token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(putBody)
-                });
-
-                if (putRes.ok) {
-                    showToast('Berhasil push ke GitHub repository!', 'success');
+                const res = await fetch(`/api/keys/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('Lisensi berhasil dihapus!', 'success');
+                    loadKeys();
                 } else {
-                    const errData = await putRes.json();
-                    showToast(`Gagal push: ${errData.message || 'Error'}`, 'error');
+                    showToast(data.message || 'Gagal menghapus', 'error');
                 }
             } catch (err) {
-                console.error(err);
-                showToast('Gagal terhubung ke GitHub API', 'error');
-            } finally {
-                btn.innerHTML = `<i data-lucide="cloud-upload" class="w-3.5 h-3.5"></i> <span>Push ke GitHub</span>`;
-                lucide.createIcons();
+                showToast('Error koneksi ke server API', 'error');
             }
         }
 
-        function downloadKeysJson() {
-            const blob = new Blob([JSON.stringify(appData, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'keys.json';
-            a.click();
-            URL.revokeObjectURL(url);
-            showToast('File keys.json berhasil didownload!', 'success');
+        async function pauseAllKeys() {
+            if (!confirm('Jeda semua lisensi aktif?')) return;
+            const res = await fetch('/api/keys/action/pause-all', { method: 'POST' });
+            const data = await res.json();
+            showToast(data.message, data.success ? 'success' : 'error');
+            loadKeys();
         }
 
-        function copyGithubUrl() {
-            navigator.clipboard.writeText(getRawUrl());
-            showToast('Raw URL tersalin ke clipboard!', 'success');
+        async function unpauseAllKeys() {
+            const res = await fetch('/api/keys/action/unpause-all', { method: 'POST' });
+            const data = await res.json();
+            showToast(data.message, data.success ? 'success' : 'error');
+            loadKeys();
+        }
+
+        async function addTimeAllKeys() {
+            const res = await fetch('/api/keys/action/add-time-all', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ days: 7 })
+            });
+            const data = await res.json();
+            showToast(data.message, data.success ? 'success' : 'error');
+            loadKeys();
+        }
+
+        async function resetHwid(id) {
+            const res = await fetch('/api/keys/action/reset-hwid', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ keyId: id })
+            });
+            const data = await res.json();
+            showToast(data.message, data.success ? 'success' : 'error');
+            loadKeys();
+        }
+
+        async function toggleBanKey(id) {
+            const res = await fetch('/api/keys/action/toggle-ban', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ keyId: id })
+            });
+            const data = await res.json();
+            showToast(data.message, data.success ? 'success' : 'error');
+            loadKeys();
         }
 
         function copyText(txt) {
@@ -576,133 +681,52 @@
             showToast(`Tersalin: ${txt}`, 'success');
         }
 
-        function copyCppCode() {
-            navigator.clipboard.writeText(document.getElementById('cpp-code-display').innerText);
-            showToast('Kode C++ tersalin ke clipboard!', 'success');
+        async function testVerification() {
+            const key = document.getElementById('test-key-input').value.trim();
+            const pass = document.getElementById('test-pass-input').value.trim();
+            const resultBox = document.getElementById('test-result');
+
+            if (!key) {
+                showToast('Isi Key / Username untuk test!', 'error');
+                return;
+            }
+
+            try {
+                const reqBody = { key, username: key, password: pass };
+                const res = await fetch('/api/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(reqBody)
+                });
+                const data = await res.json();
+                resultBox.classList.remove('hidden');
+
+                if (data.authenticated) {
+                    resultBox.className = 'text-xs p-3 rounded-lg border font-mono bg-cyan-950/80 border-cyan-700 text-cyan-300';
+                    resultBox.innerHTML = `
+                        <div class="font-bold flex items-center gap-1.5"><i data-lucide="check-circle-2" class="w-4 h-4 text-cyan-400"></i> AUTENTIKASI SUKSES!</div>
+                        <div>User: ${data.data.username}</div>
+                        <div>Key: ${data.data.licenseKey}</div>
+                        <div>Sisa Durasi: ${data.data.remaining}</div>
+                    `;
+                } else {
+                    resultBox.className = 'text-xs p-3 rounded-lg border font-mono bg-rose-950/80 border-rose-800 text-rose-300';
+                    resultBox.innerHTML = `
+                        <div class="font-bold flex items-center gap-1.5"><i data-lucide="alert-circle" class="w-4 h-4 text-rose-400"></i> GAGAL: ${data.message}</div>
+                        <div>Status: ${data.status}</div>
+                    `;
+                }
+                lucide.createIcons();
+            } catch (err) {
+                showToast('Error pengujian server API', 'error');
+            }
         }
 
-        function testVerify() {
-            const u = document.getElementById('test-user').value.trim().toLowerCase();
-            const k = document.getElementById('test-key').value.trim().toUpperCase();
-            const box = document.getElementById('test-res');
+        document.getElementById('btn-run-test').addEventListener('click', testVerification);
+        document.getElementById('btn-refresh-table').addEventListener('click', loadKeys);
 
-            if (!u || !k) {
-                showToast('Isi user & key untuk test', 'error');
-                return;
-            }
-
-            const match = appData.keys.find(item => item.username.toLowerCase() === u && item.licenseKey.toUpperCase() === k);
-            box.classList.remove('hidden');
-
-            if (!match) {
-                box.className = 'text-xs p-3 rounded-lg border font-mono bg-rose-950/60 border-rose-800 text-rose-300';
-                box.innerHTML = '❌ Status: Key atau Username tidak ditemukan!';
-                return;
-            }
-
-            if (match.status !== 'active') {
-                box.className = 'text-xs p-3 rounded-lg border font-mono bg-amber-950/60 border-amber-800 text-amber-300';
-                box.innerHTML = `⚠️ Status: Key nonaktif (${match.status})`;
-                return;
-            }
-
-            if (match.expiresAt && new Date(match.expiresAt).getTime() < Date.now()) {
-                box.className = 'text-xs p-3 rounded-lg border font-mono bg-rose-950/60 border-rose-800 text-rose-300';
-                box.innerHTML = '❌ Status: Lisensi sudah kadaluarsa!';
-                return;
-            }
-
-            box.className = 'text-xs p-3 rounded-lg border font-mono bg-emerald-950/60 border-emerald-800 text-emerald-300';
-            box.innerHTML = `✅ Status: Valid & Aktif!<br>User: ${match.username}<br>Durasi: ${match.durationDays === -1 ? 'Lifetime' : match.durationDays + ' Hari'}`;
-        }
-
-        function updateCppBlock() {
-            const rawUrl = getRawUrl();
-            document.getElementById('cpp-code-display').innerText = 
-`#include <iostream>
-#include <windows.h>
-#include <wininet.h>
-#include <string>
-
-#pragma comment(lib, "wininet.lib")
-
-// URL Raw JSON lisensi Anda di GitHub:
-const std::string GITHUB_JSON_URL = "${rawUrl}";
-
-// Fungsi download string via HTTPS WinINet
-std::string FetchFromGitHub(const std::string& url) {
-    HINTERNET hInternet = InternetOpenA("KeyAuthGitHub/1.0", INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
-    if (!hInternet) return "";
-
-    HINTERNET hUrl = InternetOpenUrlA(hInternet, url.c_str(), NULL, 0, INTERNET_FLAG_RELOAD | INTERNET_FLAG_SECURE, 0);
-    if (!hUrl) {
-        InternetCloseHandle(hInternet);
-        return "";
-    }
-
-    char buffer[4096];
-    DWORD bytesRead = 0;
-    std::string result = "";
-    while (InternetReadFile(hUrl, buffer, sizeof(buffer) - 1, &bytesRead) && bytesRead > 0) {
-        buffer[bytesRead] = '\\0';
-        result += buffer;
-    }
-
-    InternetCloseHandle(hUrl);
-    InternetCloseHandle(hInternet);
-    return result;
-}
-
-// Verifikasi Username & Key terhadap database JSON GitHub
-bool VerifyLicense(const std::string& username, const std::string& key) {
-    std::string json = FetchFromGitHub(GITHUB_JSON_URL);
-    if (json.empty()) {
-        std::cout << "[ERROR] Gagal mengunduh database lisensi dari GitHub! Periksa koneksi internet.\\n";
-        return false;
-    }
-
-    // Cek apakah username dan key ada di dalam database JSON
-    std::string userPattern = "\\"username\\": \\"" + username + "\\"";
-    std::string keyPattern = "\\"licenseKey\\": \\"" + key + "\\"";
-
-    if (json.find(userPattern) != std::string::npos && json.find(keyPattern) != std::string::npos) {
-        return true;
-    }
-
-    return false;
-}
-
-int main() {
-    std::string username, key;
-    std::cout << "========================================\\n";
-    std::cout << "   PROGRAM C++ (GITHUB KEYAUTH ONLINE)  \\n";
-    std::cout << "========================================\\n";
-
-    std::cout << "Masukkan Username : ";
-    std::cin >> username;
-    std::cout << "Masukkan Key      : ";
-    std::cin >> key;
-
-    std::cout << "\\n[*] Memeriksa lisensi di GitHub...\\n";
-
-    if (VerifyLicense(username, key)) {
-        system("color 0A");
-        std::cout << "\\n[SUCCESS] Lisensi Valid! Selamat Datang, " << username << "!\\n";
-        std::cout << "[+] Membuka fitur aplikasi C++...\\n\\n";
-        
-        // --- LOGIKA UTAMA PROGRAM ANDA ---
-    } else {
-        system("color 0C");
-        std::cout << "\\n[FAILED] Username atau License Key Tidak Valid!\\n";
-    }
-
-    system("pause");
-    return 0;
-}`;
-        }
-
-        // Init
-        updateUI();
+        // Check session on startup
+        checkAdminSession();
     </script>
 </body>
 </html>
