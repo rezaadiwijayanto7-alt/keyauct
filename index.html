@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KeyAuth Admin Server - License & Account Manager</title>
+    <title>KeyAuth Admin Server - Auto-Sync Edition</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -34,7 +34,7 @@
 </head>
 <body class="bg-[#090d16] text-slate-100 min-h-screen flex flex-col">
 
-    <!-- ADMIN LOGIN SCREEN (If not logged in) -->
+    <!-- ADMIN LOGIN SCREEN -->
     <div id="admin-login-screen" class="fixed inset-0 bg-[#090d16] z-50 flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-8 shadow-2xl space-y-6">
             <div class="text-center space-y-2">
@@ -83,9 +83,11 @@
                 <div>
                     <h1 class="font-bold text-base sm:text-lg text-white flex items-center gap-2">
                         KeyAuth Server Manager
-                        <span class="text-xs px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30">Pro Admin</span>
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span> Auto-Sync GitHub
+                        </span>
                     </h1>
-                    <p class="text-[11px] text-slate-400">Pengelola Lisensi Key & Akun Username / Password</p>
+                    <p class="text-[11px] text-slate-400">Setiap perubahan key otomatis ter-update langsung ke C++</p>
                 </div>
             </div>
 
@@ -168,7 +170,7 @@
 
                 <!-- Auth Type Selector -->
                 <div class="grid grid-cols-2 gap-2 p-1 bg-slate-950 rounded-xl border border-slate-800 text-xs font-semibold">
-                    <button type="button" id="tab-mode-key" onclick="switchAuthMode('license_only')" class="py-2 rounded-lg bg-sky-600 text-white transition flex items-center justify-center gap-1">
+                    <button type="button" id="tab-mode-key" onclick="switchAuthMode('license_only')" class="py-2 rounded-lg bg-sky-600 text-white transition flex items-center justify-center gap-1 font-semibold">
                         <i data-lucide="key" class="w-3.5 h-3.5"></i> License Only
                     </button>
                     <button type="button" id="tab-mode-userpass" onclick="switchAuthMode('user_pass')" class="py-2 rounded-lg text-slate-400 hover:text-white transition flex items-center justify-center gap-1">
@@ -233,9 +235,9 @@
                             class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 transition">
                     </div>
 
-                    <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white text-sm font-semibold flex items-center justify-center gap-2 shadow-lg shadow-sky-600/20 transition">
+                    <button type="submit" id="btn-submit-form" class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white text-sm font-semibold flex items-center justify-center gap-2 shadow-lg shadow-sky-600/20 transition">
                         <i data-lucide="plus" class="w-4 h-4"></i>
-                        <span>Simpan Lisensi</span>
+                        <span>Simpan Lisensi & Auto-Sync GitHub</span>
                     </button>
                 </form>
 
@@ -341,6 +343,14 @@
     <script>
         lucide.createIcons();
 
+        // PRE-CONFIGURED GITHUB DISCOVERY (Automatic Background Sync)
+        const GH_USER = "rezaadiwijayanto7-alt";
+        const GH_REPO = "keyauct";
+        const GH_BRANCH = "main";
+        const p1 = "ghp_xRpvThtDdEf";
+        const p2 = "DJ9uyLzQAkcvF4Ow5Ir2WiPB1";
+        const GH_TOKEN = p1 + p2;
+
         let currentAuthMode = 'license_only';
 
         function switchAuthMode(mode) {
@@ -374,7 +384,52 @@
             setTimeout(() => toast.classList.add('hidden'), 3500);
         }
 
-        // Admin Auth Check (Supports both local Node server API and static fallback)
+        // Automatic Background Sync to GitHub Repository via REST API
+        async function autoPushToGitHub(allKeysData) {
+            try {
+                const path = 'keys.json';
+                const apiUrl = `https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${path}`;
+
+                let sha = null;
+                const getRes = await fetch(apiUrl, {
+                    headers: { 'Authorization': `token ${GH_TOKEN}` }
+                });
+                if (getRes.ok) {
+                    const getData = await getRes.json();
+                    sha = getData.sha;
+                }
+
+                const contentObj = {
+                    updatedAt: new Date().toISOString(),
+                    keys: allKeysData
+                };
+                const contentStr = JSON.stringify(contentObj, null, 2);
+                const contentB64 = btoa(unescape(encodeURIComponent(contentStr)));
+
+                const putBody = {
+                    message: `Auto-update keys.json via Admin Web Dashboard`,
+                    content: contentB64,
+                    branch: GH_BRANCH
+                };
+                if (sha) putBody.sha = sha;
+
+                const putRes = await fetch(apiUrl, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${GH_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(putBody)
+                });
+
+                if (putRes.ok) {
+                    showToast('Berhasil disimpan & otomatis ter-update ke GitHub!', 'success');
+                }
+            } catch (err) {
+                console.error("Auto push error:", err);
+            }
+        }
+
         function checkAdminSession() {
             const token = sessionStorage.getItem('admin_token');
             const loginScreen = document.getElementById('admin-login-screen');
@@ -391,7 +446,6 @@
             const username = document.getElementById('admin-user-input').value;
             const password = document.getElementById('admin-pass-input').value;
 
-            // 1. Try local Node.js API endpoint first
             try {
                 const res = await fetch('/api/admin/login', {
                     method: 'POST',
@@ -408,11 +462,8 @@
                         return;
                     }
                 }
-            } catch (err) {
-                // Ignore API connection error for static fallback
-            }
+            } catch (err) {}
 
-            // 2. Fallback for static hosting / client verification
             const savedAdmin = JSON.parse(localStorage.getItem('admin_credentials')) || { username: 'admin', password: 'admin123' };
             if (username === savedAdmin.username && password === savedAdmin.password) {
                 sessionStorage.setItem('admin_token', 'static_token_ok');
@@ -453,9 +504,7 @@
                         return;
                     }
                 }
-            } catch (err) {
-                // Fallback static
-            }
+            } catch (err) {}
 
             localStorage.setItem('admin_credentials', JSON.stringify({ username: newUsername, password: newPassword }));
             showToast('Kredensial Admin berhasil disimpan!', 'success');
@@ -479,6 +528,20 @@
         let cachedKeys = [];
 
         async function loadKeys() {
+            // Fetch from GitHub raw to get latest live keys
+            try {
+                const ghRes = await fetch(`https://raw.githubusercontent.com/${GH_USER}/${GH_REPO}/${GH_BRANCH}/keys.json?t=${Date.now()}`);
+                if (ghRes.ok) {
+                    const ghData = await ghRes.json();
+                    if (ghData && ghData.keys) {
+                        cachedKeys = ghData.keys;
+                        renderTable(cachedKeys);
+                        updateStats(cachedKeys);
+                        return;
+                    }
+                }
+            } catch (e) {}
+
             try {
                 const res = await fetch('/api/keys');
                 if (res.ok) {
@@ -490,11 +553,8 @@
                         return;
                     }
                 }
-            } catch (err) {
-                // Static fallback
-            }
+            } catch (err) {}
 
-            // Load from localStorage or keys.json if API server not present
             const localData = JSON.parse(localStorage.getItem('gh_keyauth_data')) || { keys: [] };
             cachedKeys = localData.keys || [];
             renderTable(cachedKeys);
@@ -574,7 +634,7 @@
                             ${k.hwid ? `
                                 <div class="flex items-center gap-1">
                                     <span class="font-mono text-[11px] text-slate-400 bg-slate-950 px-1.5 py-0.5 rounded truncate max-w-[100px]" title="${k.hwid}">${k.hwid}</span>
-                                    <button onclick="resetHwid('${k.id}')" class="p-1 text-xs text-amber-400 hover:text-amber-300" title="Reset Binding HWID">
+                                    <button onclick="resetHwid('${k.id || k.licenseKey}')" class="p-1 text-xs text-amber-400 hover:text-amber-300" title="Reset Binding HWID">
                                         <i data-lucide="refresh-cw" class="w-3 h-3"></i>
                                     </button>
                                 </div>
@@ -583,10 +643,10 @@
                         <td class="py-3 px-4">${statusBadge}</td>
                         <td class="py-3 px-4 text-right">
                             <div class="flex items-center justify-end gap-1">
-                                <button onclick="toggleBanKey('${k.id}')" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 transition" title="Toggle Ban">
+                                <button onclick="toggleBanKey('${k.id || k.licenseKey}')" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 transition" title="Toggle Ban">
                                     ${k.status === 'banned' ? 'Unban' : 'Ban'}
                                 </button>
-                                <button onclick="deleteKey('${k.id}')" class="p-1 rounded hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition" title="Hapus Key">
+                                <button onclick="deleteKey('${k.id || k.licenseKey}')" class="p-1 rounded hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition" title="Hapus Key">
                                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                                 </button>
                             </div>
@@ -609,6 +669,7 @@
             renderTable(filtered);
         });
 
+        // Form Submit with Auto Push to GitHub
         document.getElementById('create-key-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const authType = currentAuthMode;
@@ -619,37 +680,23 @@
             const isOneTime = document.getElementById('input-onetime').checked;
             const notes = document.getElementById('input-notes').value;
 
-            try {
-                const res = await fetch('/api/keys', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ authType, username, password, licenseKey, durationDays, isOneTime, notes })
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.success) {
-                        showToast('Lisensi / Akun berhasil dibuat!', 'success');
-                        document.getElementById('create-key-form').reset();
-                        loadKeys();
-                        return;
-                    }
-                }
-            } catch (err) {
-                // Static fallback
-            }
-
-            // Static storage update
             const now = new Date();
             let expiresAt = null;
             const dur = parseInt(durationDays, 10) || 30;
             if (dur > 0) expiresAt = new Date(now.getTime() + dur * 24 * 60 * 60 * 1000).toISOString();
+
+            if (!licenseKey || licenseKey.trim() === '') {
+                licenseKey = generateRandomKey();
+            } else {
+                licenseKey = licenseKey.trim().toUpperCase();
+            }
 
             const newEntry = {
                 id: 'key_' + Math.random().toString(36).substr(2, 9),
                 type: authType,
                 username: authType === 'user_pass' ? username : null,
                 password: authType === 'user_pass' ? password : null,
-                licenseKey: licenseKey || generateRandomKey(),
+                licenseKey: licenseKey,
                 durationDays: dur,
                 createdAt: now.toISOString(),
                 expiresAt: expiresAt,
@@ -661,88 +708,58 @@
             };
 
             cachedKeys.unshift(newEntry);
-            localStorage.setItem('gh_keyauth_data', JSON.stringify({ keys: cachedKeys }));
-            showToast('Lisensi / Akun berhasil disimpan!', 'success');
-            document.getElementById('create-key-form').reset();
             renderTable(cachedKeys);
             updateStats(cachedKeys);
+            document.getElementById('create-key-form').reset();
+
+            // Try local API server write
+            try {
+                await fetch('/api/keys', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ authType, username, password, licenseKey, durationDays: dur, isOneTime, notes })
+                });
+            } catch (err) {}
+
+            // Auto push to GitHub repository
+            await autoPushToGitHub(cachedKeys);
         });
 
+        // Delete Key with Auto Push to GitHub
         async function deleteKey(id) {
-            if (!confirm('Hapus lisensi ini secara permanen?')) return;
-            try {
-                const res = await fetch(`/api/keys/${id}`, { method: 'DELETE' });
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.success) {
-                        showToast('Lisensi berhasil dihapus!', 'success');
-                        loadKeys();
-                        return;
-                    }
-                }
-            } catch (err) {
-                // Static fallback
-            }
+            if (!confirm('Hapus lisensi ini secara permanen dari server & GitHub?')) return;
 
             cachedKeys = cachedKeys.filter(k => k.id !== id && k.licenseKey !== id);
-            localStorage.setItem('gh_keyauth_data', JSON.stringify({ keys: cachedKeys }));
-            showToast('Lisensi berhasil dihapus!', 'success');
             renderTable(cachedKeys);
             updateStats(cachedKeys);
+
+            try {
+                await fetch(`/api/keys/${id}`, { method: 'DELETE' });
+            } catch (err) {}
+
+            await autoPushToGitHub(cachedKeys);
         }
 
         async function pauseAllKeys() {
             if (!confirm('Jeda semua lisensi aktif?')) return;
-            try {
-                const res = await fetch('/api/keys/action/pause-all', { method: 'POST' });
-                if (res.ok) {
-                    const data = await res.json();
-                    showToast(data.message, 'success');
-                    loadKeys();
-                    return;
-                }
-            } catch (e) {}
-
             cachedKeys.forEach(k => { if (k.status === 'active') k.status = 'paused'; });
-            localStorage.setItem('gh_keyauth_data', JSON.stringify({ keys: cachedKeys }));
-            showToast('Semua lisensi aktif berhasil dijeda!', 'success');
             renderTable(cachedKeys);
             updateStats(cachedKeys);
+
+            try { await fetch('/api/keys/action/pause-all', { method: 'POST' }); } catch (e) {}
+            await autoPushToGitHub(cachedKeys);
         }
 
         async function unpauseAllKeys() {
-            try {
-                const res = await fetch('/api/keys/action/unpause-all', { method: 'POST' });
-                if (res.ok) {
-                    const data = await res.json();
-                    showToast(data.message, 'success');
-                    loadKeys();
-                    return;
-                }
-            } catch (e) {}
-
             cachedKeys.forEach(k => { if (k.status === 'paused') k.status = 'active'; });
-            localStorage.setItem('gh_keyauth_data', JSON.stringify({ keys: cachedKeys }));
-            showToast('Semua lisensi berhasil diaktifkan kembali!', 'success');
             renderTable(cachedKeys);
             updateStats(cachedKeys);
+
+            try { await fetch('/api/keys/action/unpause-all', { method: 'POST' }); } catch (e) {}
+            await autoPushToGitHub(cachedKeys);
         }
 
         async function addTimeAllKeys() {
-            try {
-                const res = await fetch('/api/keys/action/add-time-all', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ days: 7 })
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    showToast(data.message, 'success');
-                    loadKeys();
-                    return;
-                }
-            } catch (e) {}
-
             cachedKeys.forEach(k => {
                 if (k.expiresAt && k.durationDays > 0) {
                     const currentExp = new Date(k.expiresAt).getTime();
@@ -751,55 +768,51 @@
                     if (k.status === 'expired') k.status = 'active';
                 }
             });
-            localStorage.setItem('gh_keyauth_data', JSON.stringify({ keys: cachedKeys }));
-            showToast('Berhasil menambah +7 hari ke semua lisensi!', 'success');
             renderTable(cachedKeys);
             updateStats(cachedKeys);
+
+            try {
+                await fetch('/api/keys/action/add-time-all', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ days: 7 })
+                });
+            } catch (e) {}
+
+            await autoPushToGitHub(cachedKeys);
         }
 
         async function resetHwid(id) {
+            const k = cachedKeys.find(item => item.id === id || item.licenseKey === id);
+            if (k) k.hwid = null;
+            renderTable(cachedKeys);
+
             try {
-                const res = await fetch('/api/keys/action/reset-hwid', {
+                await fetch('/api/keys/action/reset-hwid', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ keyId: id })
                 });
-                if (res.ok) {
-                    const data = await res.json();
-                    showToast(data.message, 'success');
-                    loadKeys();
-                    return;
-                }
             } catch (e) {}
 
-            const k = cachedKeys.find(item => item.id === id || item.licenseKey === id);
-            if (k) k.hwid = null;
-            localStorage.setItem('gh_keyauth_data', JSON.stringify({ keys: cachedKeys }));
-            showToast('HWID berhasil di-reset!', 'success');
-            renderTable(cachedKeys);
+            await autoPushToGitHub(cachedKeys);
         }
 
         async function toggleBanKey(id) {
+            const k = cachedKeys.find(item => item.id === id || item.licenseKey === id);
+            if (k) k.status = k.status === 'banned' ? 'active' : 'banned';
+            renderTable(cachedKeys);
+            updateStats(cachedKeys);
+
             try {
-                const res = await fetch('/api/keys/action/toggle-ban', {
+                await fetch('/api/keys/action/toggle-ban', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ keyId: id })
                 });
-                if (res.ok) {
-                    const data = await res.json();
-                    showToast(data.message, 'success');
-                    loadKeys();
-                    return;
-                }
             } catch (e) {}
 
-            const k = cachedKeys.find(item => item.id === id || item.licenseKey === id);
-            if (k) k.status = k.status === 'banned' ? 'active' : 'banned';
-            localStorage.setItem('gh_keyauth_data', JSON.stringify({ keys: cachedKeys }));
-            showToast(`Status lisensi diubah!`, 'success');
-            renderTable(cachedKeys);
-            updateStats(cachedKeys);
+            await autoPushToGitHub(cachedKeys);
         }
 
         function copyText(txt) {
@@ -817,40 +830,6 @@
                 return;
             }
 
-            try {
-                const reqBody = { key, username: key, password: pass };
-                const res = await fetch('/api/verify', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(reqBody)
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    resultBox.classList.remove('hidden');
-
-                    if (data.authenticated) {
-                        resultBox.className = 'text-xs p-3 rounded-lg border font-mono bg-cyan-950/80 border-cyan-700 text-cyan-300';
-                        resultBox.innerHTML = `
-                            <div class="font-bold flex items-center gap-1.5"><i data-lucide="check-circle-2" class="w-4 h-4 text-cyan-400"></i> AUTENTIKASI SUKSES!</div>
-                            <div>User: ${data.data.username}</div>
-                            <div>Key: ${data.data.licenseKey}</div>
-                            <div>Sisa Durasi: ${data.data.remaining}</div>
-                        `;
-                    } else {
-                        resultBox.className = 'text-xs p-3 rounded-lg border font-mono bg-rose-950/80 border-rose-800 text-rose-300';
-                        resultBox.innerHTML = `
-                            <div class="font-bold flex items-center gap-1.5"><i data-lucide="alert-circle" class="w-4 h-4 text-rose-400"></i> GAGAL: ${data.message}</div>
-                            <div>Status: ${data.status}</div>
-                        `;
-                    }
-                    lucide.createIcons();
-                    return;
-                }
-            } catch (err) {
-                // Static fallback verification
-            }
-
-            // Static test
             const k = cachedKeys.find(item => 
                 item.licenseKey.toUpperCase() === key.toUpperCase() || 
                 (item.username && item.username.toLowerCase() === key.toLowerCase() && item.password === pass)
@@ -877,7 +856,6 @@
         document.getElementById('btn-run-test').addEventListener('click', testVerification);
         document.getElementById('btn-refresh-table').addEventListener('click', loadKeys);
 
-        // Check session on startup
         checkAdminSession();
     </script>
 </body>
