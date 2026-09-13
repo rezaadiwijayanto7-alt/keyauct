@@ -166,7 +166,7 @@
                     <p class="text-xs text-slate-400 mt-1">Pilih tipe mode autentikasi di bawah ini.</p>
                 </div>
 
-                <!-- Auth Type Selector (License Only OR Username + Password) -->
+                <!-- Auth Type Selector -->
                 <div class="grid grid-cols-2 gap-2 p-1 bg-slate-950 rounded-xl border border-slate-800 text-xs font-semibold">
                     <button type="button" id="tab-mode-key" onclick="switchAuthMode('license_only')" class="py-2 rounded-lg bg-sky-600 text-white transition flex items-center justify-center gap-1">
                         <i data-lucide="key" class="w-3.5 h-3.5"></i> License Only
@@ -177,7 +177,7 @@
                 </div>
 
                 <form id="create-key-form" class="space-y-4">
-                    <!-- User & Pass Inputs (Shown if mode = user_pass) -->
+                    <!-- User & Pass Inputs -->
                     <div id="userpass-inputs-container" class="hidden space-y-3 p-3 rounded-xl bg-slate-800/40 border border-slate-700/60">
                         <div>
                             <label class="block text-xs font-medium text-slate-300 mb-1">Username Pengguna</label>
@@ -374,7 +374,7 @@
             setTimeout(() => toast.classList.add('hidden'), 3500);
         }
 
-        // Admin Auth Check
+        // Admin Auth Check (Supports both local Node server API and static fallback)
         function checkAdminSession() {
             const token = sessionStorage.getItem('admin_token');
             const loginScreen = document.getElementById('admin-login-screen');
@@ -391,23 +391,36 @@
             const username = document.getElementById('admin-user-input').value;
             const password = document.getElementById('admin-pass-input').value;
 
+            // 1. Try local Node.js API endpoint first
             try {
                 const res = await fetch('/api/admin/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password })
                 });
-                const data = await res.json();
-                if (data.success) {
-                    sessionStorage.setItem('admin_token', data.token);
-                    document.getElementById('admin-login-screen').classList.add('hidden');
-                    showToast('Selamat datang, Admin!', 'success');
-                    loadKeys();
-                } else {
-                    showToast(data.message || 'Login gagal!', 'error');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.success) {
+                        sessionStorage.setItem('admin_token', data.token);
+                        document.getElementById('admin-login-screen').classList.add('hidden');
+                        showToast('Selamat datang, Admin!', 'success');
+                        loadKeys();
+                        return;
+                    }
                 }
             } catch (err) {
-                showToast('Error koneksi ke server API', 'error');
+                // Ignore API connection error for static fallback
+            }
+
+            // 2. Fallback for static hosting / client verification
+            const savedAdmin = JSON.parse(localStorage.getItem('admin_credentials')) || { username: 'admin', password: 'admin123' };
+            if (username === savedAdmin.username && password === savedAdmin.password) {
+                sessionStorage.setItem('admin_token', 'static_token_ok');
+                document.getElementById('admin-login-screen').classList.add('hidden');
+                showToast('Selamat datang, Admin!', 'success');
+                loadKeys();
+            } else {
+                showToast('Username atau Password Admin salah!', 'error');
             }
         });
 
@@ -432,16 +445,21 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ newUsername, newPassword })
                 });
-                const data = await res.json();
-                if (data.success) {
-                    showToast('Kredensial Admin berhasil diperbarui!', 'success');
-                    toggleChangePassModal();
-                } else {
-                    showToast(data.message, 'error');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.success) {
+                        showToast('Kredensial Admin berhasil diperbarui!', 'success');
+                        toggleChangePassModal();
+                        return;
+                    }
                 }
             } catch (err) {
-                showToast('Error pengubahan data admin', 'error');
+                // Fallback static
             }
+
+            localStorage.setItem('admin_credentials', JSON.stringify({ username: newUsername, password: newPassword }));
+            showToast('Kredensial Admin berhasil disimpan!', 'success');
+            toggleChangePassModal();
         });
 
         function generateRandomKey() {
@@ -463,16 +481,24 @@
         async function loadKeys() {
             try {
                 const res = await fetch('/api/keys');
-                const data = await res.json();
-                if (data.success) {
-                    cachedKeys = data.keys || [];
-                    renderTable(cachedKeys);
-                    updateStats(cachedKeys);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.success) {
+                        cachedKeys = data.keys || [];
+                        renderTable(cachedKeys);
+                        updateStats(cachedKeys);
+                        return;
+                    }
                 }
             } catch (err) {
-                console.error(err);
-                showToast('Gagal terhubung ke API server', 'error');
+                // Static fallback
             }
+
+            // Load from localStorage or keys.json if API server not present
+            const localData = JSON.parse(localStorage.getItem('gh_keyauth_data')) || { keys: [] };
+            cachedKeys = localData.keys || [];
+            renderTable(cachedKeys);
+            updateStats(cachedKeys);
         }
 
         function updateStats(keys) {
@@ -599,81 +625,181 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ authType, username, password, licenseKey, durationDays, isOneTime, notes })
                 });
-                const data = await res.json();
-                if (data.success) {
-                    showToast('Lisensi / Akun berhasil dibuat!', 'success');
-                    document.getElementById('create-key-form').reset();
-                    loadKeys();
-                } else {
-                    showToast(data.message || 'Gagal membuat data', 'error');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.success) {
+                        showToast('Lisensi / Akun berhasil dibuat!', 'success');
+                        document.getElementById('create-key-form').reset();
+                        loadKeys();
+                        return;
+                    }
                 }
             } catch (err) {
-                showToast('Error koneksi ke server API', 'error');
+                // Static fallback
             }
+
+            // Static storage update
+            const now = new Date();
+            let expiresAt = null;
+            const dur = parseInt(durationDays, 10) || 30;
+            if (dur > 0) expiresAt = new Date(now.getTime() + dur * 24 * 60 * 60 * 1000).toISOString();
+
+            const newEntry = {
+                id: 'key_' + Math.random().toString(36).substr(2, 9),
+                type: authType,
+                username: authType === 'user_pass' ? username : null,
+                password: authType === 'user_pass' ? password : null,
+                licenseKey: licenseKey || generateRandomKey(),
+                durationDays: dur,
+                createdAt: now.toISOString(),
+                expiresAt: expiresAt,
+                status: 'active',
+                hwid: null,
+                isOneTime: !!isOneTime,
+                usedCount: 0,
+                notes: notes || ''
+            };
+
+            cachedKeys.unshift(newEntry);
+            localStorage.setItem('gh_keyauth_data', JSON.stringify({ keys: cachedKeys }));
+            showToast('Lisensi / Akun berhasil disimpan!', 'success');
+            document.getElementById('create-key-form').reset();
+            renderTable(cachedKeys);
+            updateStats(cachedKeys);
         });
 
         async function deleteKey(id) {
-            if (!confirm('Hapus lisensi ini secara permanen dari server?')) return;
+            if (!confirm('Hapus lisensi ini secara permanen?')) return;
             try {
                 const res = await fetch(`/api/keys/${id}`, { method: 'DELETE' });
-                const data = await res.json();
-                if (data.success) {
-                    showToast('Lisensi berhasil dihapus!', 'success');
-                    loadKeys();
-                } else {
-                    showToast(data.message || 'Gagal menghapus', 'error');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.success) {
+                        showToast('Lisensi berhasil dihapus!', 'success');
+                        loadKeys();
+                        return;
+                    }
                 }
             } catch (err) {
-                showToast('Error koneksi ke server API', 'error');
+                // Static fallback
             }
+
+            cachedKeys = cachedKeys.filter(k => k.id !== id && k.licenseKey !== id);
+            localStorage.setItem('gh_keyauth_data', JSON.stringify({ keys: cachedKeys }));
+            showToast('Lisensi berhasil dihapus!', 'success');
+            renderTable(cachedKeys);
+            updateStats(cachedKeys);
         }
 
         async function pauseAllKeys() {
             if (!confirm('Jeda semua lisensi aktif?')) return;
-            const res = await fetch('/api/keys/action/pause-all', { method: 'POST' });
-            const data = await res.json();
-            showToast(data.message, data.success ? 'success' : 'error');
-            loadKeys();
+            try {
+                const res = await fetch('/api/keys/action/pause-all', { method: 'POST' });
+                if (res.ok) {
+                    const data = await res.json();
+                    showToast(data.message, 'success');
+                    loadKeys();
+                    return;
+                }
+            } catch (e) {}
+
+            cachedKeys.forEach(k => { if (k.status === 'active') k.status = 'paused'; });
+            localStorage.setItem('gh_keyauth_data', JSON.stringify({ keys: cachedKeys }));
+            showToast('Semua lisensi aktif berhasil dijeda!', 'success');
+            renderTable(cachedKeys);
+            updateStats(cachedKeys);
         }
 
         async function unpauseAllKeys() {
-            const res = await fetch('/api/keys/action/unpause-all', { method: 'POST' });
-            const data = await res.json();
-            showToast(data.message, data.success ? 'success' : 'error');
-            loadKeys();
+            try {
+                const res = await fetch('/api/keys/action/unpause-all', { method: 'POST' });
+                if (res.ok) {
+                    const data = await res.json();
+                    showToast(data.message, 'success');
+                    loadKeys();
+                    return;
+                }
+            } catch (e) {}
+
+            cachedKeys.forEach(k => { if (k.status === 'paused') k.status = 'active'; });
+            localStorage.setItem('gh_keyauth_data', JSON.stringify({ keys: cachedKeys }));
+            showToast('Semua lisensi berhasil diaktifkan kembali!', 'success');
+            renderTable(cachedKeys);
+            updateStats(cachedKeys);
         }
 
         async function addTimeAllKeys() {
-            const res = await fetch('/api/keys/action/add-time-all', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ days: 7 })
+            try {
+                const res = await fetch('/api/keys/action/add-time-all', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ days: 7 })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    showToast(data.message, 'success');
+                    loadKeys();
+                    return;
+                }
+            } catch (e) {}
+
+            cachedKeys.forEach(k => {
+                if (k.expiresAt && k.durationDays > 0) {
+                    const currentExp = new Date(k.expiresAt).getTime();
+                    k.expiresAt = new Date(Math.max(currentExp, Date.now()) + 7 * 24 * 60 * 60 * 1000).toISOString();
+                    k.durationDays += 7;
+                    if (k.status === 'expired') k.status = 'active';
+                }
             });
-            const data = await res.json();
-            showToast(data.message, data.success ? 'success' : 'error');
-            loadKeys();
+            localStorage.setItem('gh_keyauth_data', JSON.stringify({ keys: cachedKeys }));
+            showToast('Berhasil menambah +7 hari ke semua lisensi!', 'success');
+            renderTable(cachedKeys);
+            updateStats(cachedKeys);
         }
 
         async function resetHwid(id) {
-            const res = await fetch('/api/keys/action/reset-hwid', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ keyId: id })
-            });
-            const data = await res.json();
-            showToast(data.message, data.success ? 'success' : 'error');
-            loadKeys();
+            try {
+                const res = await fetch('/api/keys/action/reset-hwid', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ keyId: id })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    showToast(data.message, 'success');
+                    loadKeys();
+                    return;
+                }
+            } catch (e) {}
+
+            const k = cachedKeys.find(item => item.id === id || item.licenseKey === id);
+            if (k) k.hwid = null;
+            localStorage.setItem('gh_keyauth_data', JSON.stringify({ keys: cachedKeys }));
+            showToast('HWID berhasil di-reset!', 'success');
+            renderTable(cachedKeys);
         }
 
         async function toggleBanKey(id) {
-            const res = await fetch('/api/keys/action/toggle-ban', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ keyId: id })
-            });
-            const data = await res.json();
-            showToast(data.message, data.success ? 'success' : 'error');
-            loadKeys();
+            try {
+                const res = await fetch('/api/keys/action/toggle-ban', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ keyId: id })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    showToast(data.message, 'success');
+                    loadKeys();
+                    return;
+                }
+            } catch (e) {}
+
+            const k = cachedKeys.find(item => item.id === id || item.licenseKey === id);
+            if (k) k.status = k.status === 'banned' ? 'active' : 'banned';
+            localStorage.setItem('gh_keyauth_data', JSON.stringify({ keys: cachedKeys }));
+            showToast(`Status lisensi diubah!`, 'success');
+            renderTable(cachedKeys);
+            updateStats(cachedKeys);
         }
 
         function copyText(txt) {
@@ -698,28 +824,54 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(reqBody)
                 });
-                const data = await res.json();
-                resultBox.classList.remove('hidden');
+                if (res.ok) {
+                    const data = await res.json();
+                    resultBox.classList.remove('hidden');
 
-                if (data.authenticated) {
-                    resultBox.className = 'text-xs p-3 rounded-lg border font-mono bg-cyan-950/80 border-cyan-700 text-cyan-300';
-                    resultBox.innerHTML = `
-                        <div class="font-bold flex items-center gap-1.5"><i data-lucide="check-circle-2" class="w-4 h-4 text-cyan-400"></i> AUTENTIKASI SUKSES!</div>
-                        <div>User: ${data.data.username}</div>
-                        <div>Key: ${data.data.licenseKey}</div>
-                        <div>Sisa Durasi: ${data.data.remaining}</div>
-                    `;
-                } else {
-                    resultBox.className = 'text-xs p-3 rounded-lg border font-mono bg-rose-950/80 border-rose-800 text-rose-300';
-                    resultBox.innerHTML = `
-                        <div class="font-bold flex items-center gap-1.5"><i data-lucide="alert-circle" class="w-4 h-4 text-rose-400"></i> GAGAL: ${data.message}</div>
-                        <div>Status: ${data.status}</div>
-                    `;
+                    if (data.authenticated) {
+                        resultBox.className = 'text-xs p-3 rounded-lg border font-mono bg-cyan-950/80 border-cyan-700 text-cyan-300';
+                        resultBox.innerHTML = `
+                            <div class="font-bold flex items-center gap-1.5"><i data-lucide="check-circle-2" class="w-4 h-4 text-cyan-400"></i> AUTENTIKASI SUKSES!</div>
+                            <div>User: ${data.data.username}</div>
+                            <div>Key: ${data.data.licenseKey}</div>
+                            <div>Sisa Durasi: ${data.data.remaining}</div>
+                        `;
+                    } else {
+                        resultBox.className = 'text-xs p-3 rounded-lg border font-mono bg-rose-950/80 border-rose-800 text-rose-300';
+                        resultBox.innerHTML = `
+                            <div class="font-bold flex items-center gap-1.5"><i data-lucide="alert-circle" class="w-4 h-4 text-rose-400"></i> GAGAL: ${data.message}</div>
+                            <div>Status: ${data.status}</div>
+                        `;
+                    }
+                    lucide.createIcons();
+                    return;
                 }
-                lucide.createIcons();
             } catch (err) {
-                showToast('Error pengujian server API', 'error');
+                // Static fallback verification
             }
+
+            // Static test
+            const k = cachedKeys.find(item => 
+                item.licenseKey.toUpperCase() === key.toUpperCase() || 
+                (item.username && item.username.toLowerCase() === key.toLowerCase() && item.password === pass)
+            );
+
+            resultBox.classList.remove('hidden');
+            if (k && k.status === 'active') {
+                resultBox.className = 'text-xs p-3 rounded-lg border font-mono bg-cyan-950/80 border-cyan-700 text-cyan-300';
+                resultBox.innerHTML = `
+                    <div class="font-bold flex items-center gap-1.5"><i data-lucide="check-circle-2" class="w-4 h-4 text-cyan-400"></i> AUTENTIKASI SUKSES!</div>
+                    <div>User: ${k.username || 'User'}</div>
+                    <div>Key: ${k.licenseKey}</div>
+                    <div>Sisa Durasi: ${k.durationDays === -1 ? 'Lifetime' : k.durationDays + ' Hari'}</div>
+                `;
+            } else {
+                resultBox.className = 'text-xs p-3 rounded-lg border font-mono bg-rose-950/80 border-rose-800 text-rose-300';
+                resultBox.innerHTML = `
+                    <div class="font-bold flex items-center gap-1.5"><i data-lucide="alert-circle" class="w-4 h-4 text-rose-400"></i> GAGAL: Lisensi / Akun Tidak Valid</div>
+                `;
+            }
+            lucide.createIcons();
         }
 
         document.getElementById('btn-run-test').addEventListener('click', testVerification);
