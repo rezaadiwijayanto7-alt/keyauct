@@ -129,5 +129,61 @@ namespace KeyAuthGitHub {
             info.message = "Username atau License Key tidak ditemukan di GitHub!";
             return info;
         }
+
+        LicenseInfo VerifyKey(const std::string& inputKey) {
+            LicenseInfo info;
+
+            if (inputKey.empty()) {
+                info.message = "License Key tidak boleh kosong!";
+                return info;
+            }
+
+            std::string jsonData = DownloadString(rawJsonUrl);
+            if (jsonData.empty()) {
+                info.message = "Gagal mengunduh database lisensi dari GitHub. Periksa koneksi internet / URL raw!";
+                return info;
+            }
+
+            std::string targetKey = ToUpper(inputKey);
+
+            // Loop through each key object in the JSON
+            size_t pos = 0;
+            while ((pos = jsonData.find("{", pos)) != std::string::npos) {
+                size_t endPos = jsonData.find("}", pos);
+                if (endPos == std::string::npos) break;
+
+                std::string objectBlock = jsonData.substr(pos, endPos - pos + 1);
+                std::string uName = ExtractField(objectBlock, "username");
+                std::string lKey = ExtractField(objectBlock, "licenseKey");
+                std::string status = ExtractField(objectBlock, "status");
+                std::string exp = ExtractField(objectBlock, "expiresAt");
+                std::string notes = ExtractField(objectBlock, "notes");
+                std::string dur = ExtractField(objectBlock, "durationDays");
+
+                if (ToUpper(lKey) == targetKey) {
+                    info.username = uName.empty() ? "User" : uName;
+                    info.licenseKey = lKey;
+                    info.status = status;
+                    info.expiresAt = exp.empty() ? "Lifetime" : exp;
+                    info.notes = notes;
+
+                    if (status != "active") {
+                        info.isValid = false;
+                        info.message = "Lisensi telah dinonaktifkan / diblokir (Status: " + status + ")!";
+                        return info;
+                    }
+
+                    info.isValid = true;
+                    info.message = "Autentikasi Berhasil!";
+                    return info;
+                }
+
+                pos = endPos + 1;
+            }
+
+            info.isValid = false;
+            info.message = "License Key tidak ditemukan di GitHub!";
+            return info;
+        }
     };
 }
