@@ -1,6 +1,21 @@
 {
-  "updatedAt": "2026-09-13T22:05:46.825Z",
+  "updatedAt": "2026-09-13T22:06:12.495Z",
   "keys": [
+    {
+      "id": "key_0fkbih2rs",
+      "type": "license_only",
+      "username": null,
+      "password": null,
+      "licenseKey": "KEY-J364-5AFG-ANK1",
+      "durationDays": 1,
+      "createdAt": "2026-09-13T22:06:11.952Z",
+      "expiresAt": "2026-09-14T22:06:11.952Z",
+      "status": "active",
+      "hwid": null,
+      "isOneTime": false,
+      "usedCount": 0,
+      "notes": ""
+    },
     {
       "id": "key_ha5i",
       "type": "license_only",
