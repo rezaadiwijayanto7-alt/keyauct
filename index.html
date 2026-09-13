@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KeyAuth - GitHub Public Edition</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .font-mono { font-family: 'JetBrains+Mono', monospace; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-[#0b0f19] text-slate-100 min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <header class="border-b border-slate-800 bg-[#0f172a]/90 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                    <i data-lucide="github" class="w-6 h-6 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base sm:text-lg text-white flex items-center gap-2">
+                        KeyAuth <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">GitHub Edition</span>
+                    </h1>
+                    <p class="text-[11px] text-slate-400">100% Free Public Hosting via GitHub Pages & Raw JSON</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-2">
+                <button onclick="toggleSettingsModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 flex items-center gap-1.5 transition">
+                    <i data-lucide="settings" class="w-4 h-4 text-indigo-400"></i>
+                    <span>Pengaturan GitHub</span>
+                </button>
+                <a href="#cpp-section" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white flex items-center gap-1.5 transition">
+                    <i data-lucide="code-2" class="w-4 h-4"></i>
+                    <span>Kode C++</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 space-y-8 w-full">
+
+        <!-- GitHub Info Banner -->
+        <div class="bg-gradient-to-r from-indigo-950/60 via-slate-900 to-slate-900 border border-indigo-900/40 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div class="flex items-start gap-3">
+                <div class="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 mt-0.5">
+                    <i data-lucide="globe" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                        Public URL Raw JSON Database
+                        <span id="repo-status-badge" class="text-[10px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">Belum disetting</span>
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-0.5" id="github-url-display">https://raw.githubusercontent.com/USERNAME/REPO/main/keys.json</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 w-full md:w-auto">
+                <button onclick="copyGithubUrl()" class="w-full md:w-auto px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-indigo-300 flex items-center justify-center gap-1.5 transition">
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                    <span>Salin Raw URL</span>
+                </button>
+                <button onclick="downloadKeysJson()" class="w-full md:w-auto px-3.5 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-xs font-medium text-emerald-300 flex items-center justify-center gap-1.5 transition">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                    <span>Download keys.json</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Grid Cards -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left Column: Add Key Form -->
+            <div class="lg:col-span-1 bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5">
+                <div>
+                    <h2 class="text-base font-bold text-white flex items-center gap-2">
+                        <i data-lucide="key-round" class="w-5 h-5 text-indigo-400"></i>
+                        Tambah Key & User Baru
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">Buat lisensi yang bisa diakses publik di C++.</p>
+                </div>
+
+                <form id="key-form" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Username Pengguna</label>
+                        <input type="text" id="username" required placeholder="Contoh: user_john"
+                            class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="text-xs font-medium text-slate-300">License Key</label>
+                            <button type="button" onclick="autoGenerateKey()" class="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
+                                <i data-lucide="sparkles" class="w-3 h-3"></i> Acak Key
+                            </button>
+                        </div>
+                        <input type="text" id="licenseKey" required placeholder="KEY-XXXX-XXXX-XXXX"
+                            class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-indigo-300 font-mono focus:outline-none focus:border-indigo-500 transition">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Masa Berlaku</label>
+                        <select id="duration" class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+                            <option value="1">1 Hari (Trial)</option>
+                            <option value="7">7 Hari (1 Minggu)</option>
+                            <option value="30" selected>30 Hari (1 Bulan)</option>
+                            <option value="90">90 Hari (3 Bulan)</option>
+                            <option value="365">365 Hari (1 Tahun)</option>
+                            <option value="-1">Lifetime (Selamanya)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Catatan / Keterangan</label>
+                        <input type="text" id="notes" placeholder="Contoh: Discord VIP Member"
+                            class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
+                    </div>
+
+                    <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/25 transition">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        <span>Tambahkan ke Database</span>
+                    </button>
+                </form>
+
+                <!-- Mini Verification Tester -->
+                <div class="border-t border-slate-800 pt-4 space-y-3">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                        <i data-lucide="flask-conical" class="w-4 h-4 text-violet-400"></i>
+                        Uji Verifikasi Offline / Online
+                    </h3>
+                    <input type="text" id="test-user" placeholder="Username uji" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white">
+                    <input type="text" id="test-key" placeholder="Key uji" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-indigo-300 font-mono">
+                    <button onclick="testVerify()" class="w-full py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 transition">
+                        Cek Validitas
+                    </button>
+                    <div id="test-res" class="hidden text-xs p-3 rounded-lg border font-mono"></div>
+                </div>
+            </div>
+
+            <!-- Right Column: Keys Table -->
+            <div class="lg:col-span-2 bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <i data-lucide="database" class="w-5 h-5 text-indigo-400"></i>
+                            Daftar Lisensi (<span id="key-count">0</span>)
+                        </h2>
+                        <p class="text-xs text-slate-400">Semua key yang tersimpan di sistem.</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="search-bar" oninput="filterKeys()" placeholder="Cari user / key..."
+                            class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+                        <button onclick="syncWithGitHub()" id="btn-sync-gh" class="px-3 py-1.5 rounded-xl bg-violet-600/20 hover:bg-violet-600/30 border border-violet-500/30 text-xs font-medium text-violet-300 flex items-center gap-1.5 transition">
+                            <i data-lucide="cloud-upload" class="w-3.5 h-3.5"></i>
+                            <span>Push ke GitHub</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="flex-1 overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/40">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-800/60 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+                            <tr>
+                                <th class="py-3 px-4">Pengguna</th>
+                                <th class="py-3 px-4">License Key</th>
+                                <th class="py-3 px-4">Masa Berlaku</th>
+                                <th class="py-3 px-4">Status</th>
+                                <th class="py-3 px-4 text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body" class="divide-y divide-slate-800/60 text-slate-300">
+                            <!-- Injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="p-3 rounded-xl bg-slate-800/40 border border-slate-700/50 text-[11px] text-slate-400 flex items-start gap-2">
+                    <i data-lucide="info" class="w-4 h-4 text-indigo-400 shrink-0 mt-0.5"></i>
+                    <span>
+                        <strong>Tips GitHub Hosting:</strong> Jika Anda menggunakan token GitHub (di Pengaturan), setiap perubahan akan langsung tersimpan otomatis ke file <code>keys.json</code> di repo GitHub Anda!
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- C++ Integration Guide -->
+        <div id="cpp-section" class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-base font-bold text-white flex items-center gap-2">
+                        <i data-lucide="file-code" class="w-5 h-5 text-indigo-400"></i>
+                        Kode C++ (Terkoneksi Otomatis ke GitHub Anda)
+                    </h2>
+                    <p class="text-xs text-slate-400">Gunakan kode ini di C++ untuk memverifikasi lisensi langsung dari GitHub.</p>
+                </div>
+                <button onclick="copyCppCode()" class="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white flex items-center gap-1.5 transition">
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                    <span>Salin Kode C++</span>
+                </button>
+            </div>
+
+            <pre class="bg-slate-950 p-4 rounded-xl border border-slate-800 overflow-x-auto text-xs font-mono text-indigo-200/90 leading-relaxed"><code id="cpp-code-display">// Mengambil data dari GitHub...</code></pre>
+        </div>
+
+    </main>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i data-lucide="github" class="w-5 h-5 text-indigo-400"></i>
+                    Pengaturan Repositori GitHub
+                </h3>
+                <button onclick="toggleSettingsModal()" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-slate-300 font-medium mb-1">GitHub Username</label>
+                    <input type="text" id="cfg-user" placeholder="Contoh: myusername" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white">
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-medium mb-1">Repository Name</label>
+                    <input type="text" id="cfg-repo" placeholder="Contoh: my-keyauth-system" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white">
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-medium mb-1">Branch Name</label>
+                    <input type="text" id="cfg-branch" value="main" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white">
+                </div>
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-slate-300 font-medium">GitHub Personal Access Token (Opsional)</label>
+                        <a href="https://github.com/settings/tokens" target="_blank" class="text-indigo-400 hover:underline">Buat Token</a>
+                    </div>
+                    <input type="password" id="cfg-token" placeholder="ghp_xxxxxxxxxxxx" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white">
+                    <p class="text-[11px] text-slate-500 mt-1">Jika diisi, Anda bisa update <code>keys.json</code> di GitHub secara instan tanpa perlu git push manual.</p>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2">
+                <button onclick="toggleSettingsModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300">Batal</button>
+                <button onclick="saveSettings()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white">Simpan Pengaturan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 hidden z-50 px-4 py-3 rounded-xl shadow-2xl text-xs font-medium flex items-center gap-2 border"></div>
+
+    <script>
+        lucide.createIcons();
+
+        // State & LocalStorage
+        const STORAGE_KEY = 'gh_keyauth_data';
+        const CONFIG_KEY = 'gh_keyauth_config';
+
+        let appData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
+            updatedAt: new Date().toISOString(),
+            keys: [
+                {
+                    username: "tester1",
+                    licenseKey: "KEY-TEST-1234-5678",
+                    durationDays: 30,
+                    createdAt: new Date().toISOString(),
+                    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                    status: "active",
+                    notes: "Demo User"
+                }
+            ]
+        };
+
+        let appConfig = JSON.parse(localStorage.getItem(CONFIG_KEY)) || {
+            user: "rezaadiwijayanto7-alt",
+            repo: "keyauct",
+            branch: "main",
+            token: ""
+        };
+
+        function saveLocal() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+            updateUI();
+        }
+
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.className = `fixed bottom-5 right-5 z-50 px-4 py-3 rounded-xl shadow-2xl text-xs font-semibold flex items-center gap-2 border backdrop-blur ${
+                type === 'success' ? 'bg-emerald-950/90 text-emerald-300 border-emerald-800' : 'bg-rose-950/90 text-rose-300 border-rose-800'
+            }`;
+            toast.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle-2' : 'alert-circle'}" class="w-4 h-4"></i> <span>${msg}</span>`;
+            toast.classList.remove('hidden');
+            lucide.createIcons();
+            setTimeout(() => toast.classList.add('hidden'), 3500);
+        }
+
+        function autoGenerateKey() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            const part = () => {
+                let s = '';
+                for (let i = 0; i < 4; i++) s += chars.charAt(Math.floor(Math.random() * chars.length));
+                return s;
+            };
+            document.getElementById('licenseKey').value = `KEY-${part()}-${part()}-${part()}`;
+        }
+
+        function getRawUrl() {
+            return `https://raw.githubusercontent.com/${appConfig.user}/${appConfig.repo}/${appConfig.branch}/keys.json`;
+        }
+
+        function updateUI() {
+            // Update URL display
+            const rawUrl = getRawUrl();
+            document.getElementById('github-url-display').innerText = rawUrl;
+            document.getElementById('key-count').innerText = appData.keys.length;
+
+            const badge = document.getElementById('repo-status-badge');
+            if (appConfig.user !== 'YOUR_GITHUB_USERNAME' && appConfig.repo !== 'YOUR_REPO_NAME') {
+                badge.className = "text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20";
+                badge.innerText = "Configured";
+            } else {
+                badge.className = "text-[10px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20";
+                badge.innerText = "Belum Disetting";
+            }
+
+            // Render Table
+            renderTable(appData.keys);
+
+            // Update C++ Code block
+            updateCppBlock();
+        }
+
+        function renderTable(keys) {
+            const tbody = document.getElementById('table-body');
+            if (keys.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-500">Belum ada lisensi.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = keys.map((k, idx) => {
+                const isActive = k.status === 'active';
+                let remaining = 'Lifetime';
+                if (k.expiresAt) {
+                    const diff = new Date(k.expiresAt).getTime() - Date.now();
+                    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+                    remaining = days > 0 ? `${days} hari lagi` : 'Kadaluarsa';
+                }
+
+                return `
+                    <tr class="hover:bg-slate-800/30 transition">
+                        <td class="py-3 px-4">
+                            <div class="font-semibold text-white">${k.username}</div>
+                            ${k.notes ? `<div class="text-[11px] text-slate-500 truncate max-w-[150px]">${k.notes}</div>` : ''}
+                        </td>
+                        <td class="py-3 px-4">
+                            <div class="flex items-center gap-1.5">
+                                <span class="font-mono text-indigo-300 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">${k.licenseKey}</span>
+                                <button onclick="copyText('${k.licenseKey}')" class="p-1 text-slate-400 hover:text-white" title="Salin Key">
+                                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                                </button>
+                            </div>
+                        </td>
+                        <td class="py-3 px-4">
+                            <div class="text-slate-300">${k.durationDays === -1 ? 'Lifetime' : k.durationDays + ' Hari'}</div>
+                            <div class="text-[11px] ${isActive && remaining !== 'Kadaluarsa' ? 'text-emerald-400' : 'text-rose-400'}">${remaining}</div>
+                        </td>
+                        <td class="py-3 px-4">
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                                isActive ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                            }">
+                                <span class="w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-400' : 'bg-rose-400'}"></span>
+                                ${isActive ? 'Aktif' : 'Nonaktif'}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 text-right">
+                            <button onclick="deleteKey('${k.licenseKey}')" class="p-1 text-slate-400 hover:text-rose-400" title="Hapus">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function filterKeys() {
+            const q = document.getElementById('search-bar').value.toLowerCase();
+            const filtered = appData.keys.filter(k => 
+                k.username.toLowerCase().includes(q) || 
+                k.licenseKey.toLowerCase().includes(q) ||
+                (k.notes && k.notes.toLowerCase().includes(q))
+            );
+            renderTable(filtered);
+        }
+
+        // Add Key Handler
+        document.getElementById('key-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const licenseKey = document.getElementById('licenseKey').value.trim().toUpperCase();
+            const duration = parseInt(document.getElementById('duration').value, 10);
+            const notes = document.getElementById('notes').value.trim();
+
+            if (appData.keys.some(k => k.licenseKey === licenseKey)) {
+                showToast('License Key ini sudah ada di database!', 'error');
+                return;
+            }
+
+            const now = new Date();
+            let expiresAt = null;
+            if (duration > 0) {
+                expiresAt = new Date(now.getTime() + duration * 24 * 60 * 60 * 1000).toISOString();
+            }
+
+            appData.keys.unshift({
+                username,
+                licenseKey,
+                durationDays: duration,
+                createdAt: now.toISOString(),
+                expiresAt: expiresAt,
+                status: 'active',
+                notes: notes
+            });
+            appData.updatedAt = now.toISOString();
+
+            saveLocal();
+            document.getElementById('key-form').reset();
+            showToast(`Key untuk "${username}" berhasil ditambahkan!`, 'success');
+
+            if (appConfig.token) {
+                syncWithGitHub();
+            }
+        });
+
+        function deleteKey(keyStr) {
+            if (!confirm(`Hapus key ${keyStr}?`)) return;
+            appData.keys = appData.keys.filter(k => k.licenseKey !== keyStr);
+            appData.updatedAt = new Date().toISOString();
+            saveLocal();
+            showToast('Key berhasil dihapus!', 'success');
+            if (appConfig.token) {
+                syncWithGitHub();
+            }
+        }
+
+        // Settings Modal
+        function toggleSettingsModal() {
+            const modal = document.getElementById('settings-modal');
+            modal.classList.toggle('hidden');
+            if (!modal.classList.contains('hidden')) {
+                document.getElementById('cfg-user').value = appConfig.user === 'YOUR_GITHUB_USERNAME' ? '' : appConfig.user;
+                document.getElementById('cfg-repo').value = appConfig.repo === 'YOUR_REPO_NAME' ? '' : appConfig.repo;
+                document.getElementById('cfg-branch').value = appConfig.branch || 'main';
+                document.getElementById('cfg-token').value = appConfig.token || '';
+            }
+        }
+
+        function saveSettings() {
+            appConfig.user = document.getElementById('cfg-user').value.trim() || 'YOUR_GITHUB_USERNAME';
+            appConfig.repo = document.getElementById('cfg-repo').value.trim() || 'YOUR_REPO_NAME';
+            appConfig.branch = document.getElementById('cfg-branch').value.trim() || 'main';
+            appConfig.token = document.getElementById('cfg-token').value.trim();
+
+            localStorage.setItem(CONFIG_KEY, JSON.stringify(appConfig));
+            toggleSettingsModal();
+            updateUI();
+            showToast('Pengaturan GitHub berhasil disimpan!', 'success');
+        }
+
+        // Sync directly to GitHub Repo via GitHub REST API
+        async function syncWithGitHub() {
+            if (!appConfig.token) {
+                showToast('Token GitHub belum diisi! Buka Pengaturan GitHub.', 'error');
+                toggleSettingsModal();
+                return;
+            }
+
+            const btn = document.getElementById('btn-sync-gh');
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> <span>Syncing...</span>`;
+            lucide.createIcons();
+
+            const path = 'keys.json';
+            const apiUrl = `https://api.github.com/repos/${appConfig.user}/${appConfig.repo}/contents/${path}`;
+
+            try {
+                // Get current SHA if file exists
+                let sha = null;
+                const getRes = await fetch(apiUrl, {
+                    headers: { 'Authorization': `token ${appConfig.token}` }
+                });
+
+                if (getRes.ok) {
+                    const getData = await getRes.json();
+                    sha = getData.sha;
+                }
+
+                // Prepare content (Base64)
+                const contentStr = JSON.stringify(appData, null, 2);
+                const contentB64 = btoa(unescape(encodeURIComponent(contentStr)));
+
+                const putBody = {
+                    message: `Update keys.json via KeyAuth Dashboard [${new Date().toLocaleString()}]`,
+                    content: contentB64,
+                    branch: appConfig.branch
+                };
+                if (sha) putBody.sha = sha;
+
+                const putRes = await fetch(apiUrl, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${appConfig.token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(putBody)
+                });
+
+                if (putRes.ok) {
+                    showToast('Berhasil push ke GitHub repository!', 'success');
+                } else {
+                    const errData = await putRes.json();
+                    showToast(`Gagal push: ${errData.message || 'Error'}`, 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Gagal terhubung ke GitHub API', 'error');
+            } finally {
+                btn.innerHTML = `<i data-lucide="cloud-upload" class="w-3.5 h-3.5"></i> <span>Push ke GitHub</span>`;
+                lucide.createIcons();
+            }
+        }
+
+        function downloadKeysJson() {
+            const blob = new Blob([JSON.stringify(appData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'keys.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('File keys.json berhasil didownload!', 'success');
+        }
+
+        function copyGithubUrl() {
+            navigator.clipboard.writeText(getRawUrl());
+            showToast('Raw URL tersalin ke clipboard!', 'success');
+        }
+
+        function copyText(txt) {
+            navigator.clipboard.writeText(txt);
+            showToast(`Tersalin: ${txt}`, 'success');
+        }
+
+        function copyCppCode() {
+            navigator.clipboard.writeText(document.getElementById('cpp-code-display').innerText);
+            showToast('Kode C++ tersalin ke clipboard!', 'success');
+        }
+
+        function testVerify() {
+            const u = document.getElementById('test-user').value.trim().toLowerCase();
+            const k = document.getElementById('test-key').value.trim().toUpperCase();
+            const box = document.getElementById('test-res');
+
+            if (!u || !k) {
+                showToast('Isi user & key untuk test', 'error');
+                return;
+            }
+
+            const match = appData.keys.find(item => item.username.toLowerCase() === u && item.licenseKey.toUpperCase() === k);
+            box.classList.remove('hidden');
+
+            if (!match) {
+                box.className = 'text-xs p-3 rounded-lg border font-mono bg-rose-950/60 border-rose-800 text-rose-300';
+                box.innerHTML = '❌ Status: Key atau Username tidak ditemukan!';
+                return;
+            }
+
+            if (match.status !== 'active') {
+                box.className = 'text-xs p-3 rounded-lg border font-mono bg-amber-950/60 border-amber-800 text-amber-300';
+                box.innerHTML = `⚠️ Status: Key nonaktif (${match.status})`;
+                return;
+            }
+
+            if (match.expiresAt && new Date(match.expiresAt).getTime() < Date.now()) {
+                box.className = 'text-xs p-3 rounded-lg border font-mono bg-rose-950/60 border-rose-800 text-rose-300';
+                box.innerHTML = '❌ Status: Lisensi sudah kadaluarsa!';
+                return;
+            }
+
+            box.className = 'text-xs p-3 rounded-lg border font-mono bg-emerald-950/60 border-emerald-800 text-emerald-300';
+            box.innerHTML = `✅ Status: Valid & Aktif!<br>User: ${match.username}<br>Durasi: ${match.durationDays === -1 ? 'Lifetime' : match.durationDays + ' Hari'}`;
+        }
+
+        function updateCppBlock() {
+            const rawUrl = getRawUrl();
+            document.getElementById('cpp-code-display').innerText = 
+`#include <iostream>
+#include <windows.h>
+#include <wininet.h>
+#include <string>
+
+#pragma comment(lib, "wininet.lib")
+
+// URL Raw JSON lisensi Anda di GitHub:
+const std::string GITHUB_JSON_URL = "${rawUrl}";
+
+// Fungsi download string via HTTPS WinINet
+std::string FetchFromGitHub(const std::string& url) {
+    HINTERNET hInternet = InternetOpenA("KeyAuthGitHub/1.0", INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
+    if (!hInternet) return "";
+
+    HINTERNET hUrl = InternetOpenUrlA(hInternet, url.c_str(), NULL, 0, INTERNET_FLAG_RELOAD | INTERNET_FLAG_SECURE, 0);
+    if (!hUrl) {
+        InternetCloseHandle(hInternet);
+        return "";
+    }
+
+    char buffer[4096];
+    DWORD bytesRead = 0;
+    std::string result = "";
+    while (InternetReadFile(hUrl, buffer, sizeof(buffer) - 1, &bytesRead) && bytesRead > 0) {
+        buffer[bytesRead] = '\\0';
+        result += buffer;
+    }
+
+    InternetCloseHandle(hUrl);
+    InternetCloseHandle(hInternet);
+    return result;
+}
+
+// Verifikasi Username & Key terhadap database JSON GitHub
+bool VerifyLicense(const std::string& username, const std::string& key) {
+    std::string json = FetchFromGitHub(GITHUB_JSON_URL);
+    if (json.empty()) {
+        std::cout << "[ERROR] Gagal mengunduh database lisensi dari GitHub! Periksa koneksi internet.\\n";
+        return false;
+    }
+
+    // Cek apakah username dan key ada di dalam database JSON
+    std::string userPattern = "\\"username\\": \\"" + username + "\\"";
+    std::string keyPattern = "\\"licenseKey\\": \\"" + key + "\\"";
+
+    if (json.find(userPattern) != std::string::npos && json.find(keyPattern) != std::string::npos) {
+        return true;
+    }
+
+    return false;
+}
+
+int main() {
+    std::string username, key;
+    std::cout << "========================================\\n";
+    std::cout << "   PROGRAM C++ (GITHUB KEYAUTH ONLINE)  \\n";
+    std::cout << "========================================\\n";
+
+    std::cout << "Masukkan Username : ";
+    std::cin >> username;
+    std::cout << "Masukkan Key      : ";
+    std::cin >> key;
+
+    std::cout << "\\n[*] Memeriksa lisensi di GitHub...\\n";
+
+    if (VerifyLicense(username, key)) {
+        system("color 0A");
+        std::cout << "\\n[SUCCESS] Lisensi Valid! Selamat Datang, " << username << "!\\n";
+        std::cout << "[+] Membuka fitur aplikasi C++...\\n\\n";
+        
+        // --- LOGIKA UTAMA PROGRAM ANDA ---
+    } else {
+        system("color 0C");
+        std::cout << "\\n[FAILED] Username atau License Key Tidak Valid!\\n";
+    }
+
+    system("pause");
+    return 0;
+}`;
+        }
+
+        // Init
+        updateUI();
+    </script>
+</body>
+</html>
